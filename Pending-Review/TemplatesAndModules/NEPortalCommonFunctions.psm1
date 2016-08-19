@@ -90,7 +90,7 @@ Function Write-LogFile
 Function Check-PowerShellVersion
 {
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Return $true
     }

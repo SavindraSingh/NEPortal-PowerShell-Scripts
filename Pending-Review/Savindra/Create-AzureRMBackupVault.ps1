@@ -172,7 +172,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -378,7 +378,7 @@ Process
         {
             Write-LogFile -FilePath $LogFilePath -LogText "Creating backup vault $VaultName"
             ($backupvault = New-AzureRmRecoveryServicesVault -ResourceGroupName $ResourceGroupName -Name $VaultName -Location $Location -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-            #New-AzureRMBackupVault –ResourceGroupName $ResourceGroupName –Name $VaultName –Region $Location -Storage $StorageType -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+            #New-AzureRMBackupVault ï¿½ResourceGroupName $ResourceGroupName ï¿½Name $VaultName ï¿½Region $Location -Storage $StorageType -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             
             # Set storage type
             (Set-AzureRmRecoveryServicesBackupProperties -Vault $backupvault -BackupStorageRedundancy $StorageType -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null

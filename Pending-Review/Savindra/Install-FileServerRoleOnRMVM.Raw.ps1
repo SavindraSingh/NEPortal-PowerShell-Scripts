@@ -169,7 +169,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
