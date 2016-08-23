@@ -457,10 +457,6 @@ Process
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
     }
-    Finally
-    {
-        $WarningPreference = $OldWarningPreference
-    }
 
     # 4. Add Azure VM to the existing domain
     Try
@@ -544,9 +540,43 @@ Process
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
     }
-     Finally
+
+    # 5. Custom script Cleanup activity to avoid script rerun on Virtual Machine restarts
+    Try 
     {
-        $WarningPreference = $OldWarningPreference
+        Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
+        ($VMObjExtension = Get-AzureRmVm -Name $VMName -ResourcegroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+        if($VMObjExtension -ne $null)
+        {
+            $extensions = $VMObjExtension.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'JsonADDomainExtension'}
+            if($extensions)
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Removing the existing CustomScript extensions."
+                ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                if($RemoveState.StatusCode -eq 'OK')
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle."
+                }
+                else
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing extensions.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Unable to remove the existing extensions."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                }
+            }
+        }
+        Else 
+        {
+            Write-LogFile -FilePath $LogFilePath -LogText "Unable to fetch the Vm information to remove extension.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Unable to fetch the Vm information to remove extension."
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")            
+        }
+    }
+    Catch
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Error while removing the extension.`r`n<#BlobFileReadyForUpload#>"
+        $ObjOut = "Error while removing the extension."
+        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
     }
 }
 End

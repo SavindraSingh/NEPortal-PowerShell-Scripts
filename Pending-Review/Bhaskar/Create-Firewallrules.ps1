@@ -721,8 +721,9 @@ Process
                 $ExtScriptStatus = $ScriptStatus.Extensions | Where-Object {$_.Name -eq $ExtensionName}
                 if(($ExtScriptStatus.Statuses.Code -eq 'ProvisioningState/succeeded'))
                 {
-                    $message = $ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}
-                    if($message -eq $null)
+                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}).Message
+                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdErr'}).Message
+                    if(($message1 -eq $null) -and ($message2 -eq $null))
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "Firewall Rules have been configured successfully on Virtual Machine $VMName.`r`n<#BlobFileReadyForUpload#>"
                         $ObjOut = "Firewall Rules have been configured successfully on Virtual Machine $VMName."
@@ -731,8 +732,8 @@ Process
                     }
                     Else 
                     {
-                        Write-LogFile -FilePath $LogFilePath -LogText "Firewall rules were not configured successfully on $VMName.$message`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "Firewall rules were not configured successfully on $VMName.$message"
+                        Write-LogFile -FilePath $LogFilePath -LogText "Firewall rules were not configured successfully on $VMName.$message1.$message2.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Firewall rules were not configured successfully on $VMName.$message1.$message2."
                         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                         Exit                        
@@ -772,6 +773,44 @@ Process
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
+    }
+
+    # 7. Custom script Cleanup activity to avoid script rerun on Virtual Machine restarts
+    Try 
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
+        ($VMObjExtension = Get-AzureRmVm -Name $VMName -ResourcegroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+        if($VMObjExtension -ne $null)
+        {
+            $extensions = $VMObjExtension.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
+            if($extensions)
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Removing the existing CustomScript extensions."
+                ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                if($RemoveState.StatusCode -eq 'OK')
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle."
+                }
+                else
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing extensions.`r`n<#BlobFileReadyForUpload#>"
+					$ObjOut = "Unable to remove the existing extensions."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                }
+            }
+        }
+        Else 
+        {
+            Write-LogFile -FilePath $LogFilePath -LogText "Unable to fetch the Vm information to remove extension.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Unable to fetch the Vm information to remove extension."
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")            
+        }
+    }
+    Catch
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Error while removing the extension.`r`n<#BlobFileReadyForUpload#>"
+        $ObjOut = "Error while removing the extension."
+        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
     }
 }
 End
