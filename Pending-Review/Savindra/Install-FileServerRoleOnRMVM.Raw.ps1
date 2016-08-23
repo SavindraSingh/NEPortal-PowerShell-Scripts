@@ -382,21 +382,21 @@ Process
             ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($RemoveState.StatusCode -eq 'OK')
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing AS extension and adding new handle for JoinDomain."
-                $ExtensionName = $VMName + "_JoinAD"
+                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle for Installing File Server Role."
+                $ExtensionName = $VMName + "_InstallFSRole"
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing VM AD extensions.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Unable to remove the existing VM AD extensions."
+                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing VM extensions.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Unable to remove the existing VM extensions."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
         }
 
-        $ExtensionName = "InstallAD"
-        Write-LogFile -FilePath $LogFilePath -LogText "Trying to Set the Extension for AD Installation."
+        $ExtensionName = "InstallFSRole"
+        Write-LogFile -FilePath $LogFilePath -LogText "Trying to Set the Extension for File Server Role Installation."
 
         ($ADInstallExtensionStatus = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/InstallAD-Windows2012.ps1" -Run InstallAD-Windows2012.ps1 -Argument "$DomainName $PasswordForDomainAdmin $DomainBiosName $DomainMode" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
 
