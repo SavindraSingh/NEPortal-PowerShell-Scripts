@@ -1,17 +1,5 @@
 ﻿# Parameters from the script in a comma seperated form. This works for Windows 2012 and above
-# Domain Name for the new forest
-$DomainName = $args[0]
-# Secure Password string for the Domain Admin
-$SecurePassword = $args[1]
-#NetBiosName for the AD
-$DomainNetBiosName = $args[2]
-#Domain Mode for the AD
-$DomainMode = $args[3]
 
-# Hardcoded values for the AD
-$DatabasePath = "C:\Windows\NTDS"
-$LogfilePath = "C:\Windows\NTDS"
-$SysVolume = "C:\Windows\SYSVOL"
 try
 {
     # Installing ServerManager Module
