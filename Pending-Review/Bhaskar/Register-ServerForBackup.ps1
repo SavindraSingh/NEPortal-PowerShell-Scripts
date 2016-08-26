@@ -48,9 +48,8 @@
      ==========    ====      ======
 
     .EXAMPLE
-    C:\PS> .\Create-DomainController.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -VMName testImage123 -DomainName mylab.local -PasswordForDomainAdmin ********* -DomainNetBiosName testdomain -DomainMode Windows2012 -ResourceGroupName MyResourceGrp -Location 'Southeast Asia'
-
-    This installs the active directory as First DC in Azure VM
+    C:\PS> .\RegisterServerBackup.ps1 -ClientID 12345 -AzureUserName Bhaskar@netenrich.com -AzurePassword Passwrd1 -AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d -resourceGroupName testgrp -Location 'East Asia' -BackupVaultName testvault -StorageAccountName teststorage -Passphrase 1234567895241255
+    
     .LINK
     http://www.netenrich.com/
 #>

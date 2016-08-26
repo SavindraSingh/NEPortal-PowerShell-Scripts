@@ -55,7 +55,6 @@
     .EXAMPLE
     C:\PS> .\Attach-NSGToVM.ps1 -ClientID 123456 -AzureUserName 'testlab@netenrich.com' -AzurePassword 'pass12@word' -AzureSubscriptionID 'ae7c7576-f01c-4026-9b94-d05e04e459fc' -NSGGroup 'testGrp' -ResourceGroupName 'TestLabRG' -VMName 'testImage123'
 
-    This will create a Virtual Machine based on the template and parameter JSON files available at the given path.
     .LINK
     http://www.netenrich.com/
 #>

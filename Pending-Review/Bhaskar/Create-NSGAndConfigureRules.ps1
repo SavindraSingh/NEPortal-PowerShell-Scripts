@@ -87,7 +87,6 @@
     .EXAMPLE
     C:\PS> .\Attach-NSGToVM.ps1 -ClientID 123456 -AzureUserName 'testlab@netenrich.com' -AzurePassword 'pass12@word' -AzureSubscriptionID 'ae7c7576-f01c-4026-9b94-d05e04e459fc' -NSGGroup 'testGrp' -ResourceGroupName 'TestLabRG' -VMName 'testImage123'
 
-    This will create a Virtual Machine based on the template and parameter JSON files available at the given path.
     .LINK
     http://www.netenrich.com/
 #>
@@ -145,9 +144,6 @@ Param
 
 Begin
 {
-    # Supress warnings
-    $OldWarningPreference = $WarningPreference
-    $WarningPreference = 'SilentlyContinue'
 
     # Name the Log file based on script name
     [DateTime]$LogFileTime = Get-Date
@@ -436,6 +432,17 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: Location
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: Location. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($Location))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. Location parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -881,10 +888,7 @@ Process
         # Variable declaration
         $Groups = $null
         Write-LogFile -FilePath $LogFilePath -LogText "Verifying the NSG existence in the resource group."
-        if(!$Location)
-        {
-            $Location = $ResourceGroup.Location
-        } 
+ 
         ($Groups = Get-AzureRmNetworkSecurityGroup -Name $NSGGroupName -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($Groups)
         {
@@ -901,7 +905,7 @@ Process
             else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "The network security resource group $NSGGroupName was not created.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "The resource group $ResourceGroupName does not exist."
+                $ObjOut = "The network security resource group $NSGGroupName was not created."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit

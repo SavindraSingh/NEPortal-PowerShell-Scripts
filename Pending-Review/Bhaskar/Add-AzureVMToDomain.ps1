@@ -63,7 +63,6 @@
     .EXAMPLE
     C:\PS> .\Add-AzureVMToDomain.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -VMName testImage123 -DomainName mylab.local -DomainUserName 'mylab.local\azure-admin' -DomainUserPassword 'password1234' -ResourceGroupName MyResourceGrp
 
-    This will create a Virtual Machine based on the template and parameter JSON files available at the given path.
     .LINK
     http://www.netenrich.com/
 #>
@@ -304,6 +303,17 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: Location
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: Location. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($Location))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. Location parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit

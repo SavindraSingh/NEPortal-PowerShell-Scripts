@@ -21,7 +21,7 @@
 
     Azure Subscription ID to use for this activity.
 
-    .PARAMETER ResourceGroupName
+    .PARAMETER ResourceGroupName 
 
     Name of the Resource Group name to be used for this command.
 
@@ -65,9 +65,8 @@
      ==========    ====      ======
 
     .EXAMPLE
-    C:\PS> .\Create-DomainController.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 
+    C:\PS> .\Create-RestoreDatabase.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -ResourceGroupName testgrp -Location 'East Asia' -SQLServerName SQLServer -LoginUserName MyLab\bhaskar -LoginPassword  Password1 -DatabaseName testdb -BackupFileBlobUrl "https://mystorage.blob.core.net/mycontainer/dbbackup.bak"
 
-    This installs the active directory as First DC in Azure VM
     .LINK
     http://www.netenrich.com/
 #>
@@ -322,6 +321,17 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: Location
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: Location. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($Location))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. Location parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
