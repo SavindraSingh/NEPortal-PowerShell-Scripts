@@ -28,6 +28,19 @@
     
     Valid values: "LocallyRedundant","GeoRedundant"
     
+    .PARAMETER DaysOfWeek
+    Specify the Weekdays on which you want to perform backup. Valid values for this parameter are:
+    "Sunday"
+    "Monday"
+    "Tuesday"
+    "Wednesday"
+    "Thursday"
+    "Friday"
+    "Saturday"
+
+    .PARAMETER TimesOfDay
+    Specify the time value in HH:MM (24 Hrs) time format. You can specify multiple values seperated by comma.
+
     .PARAMETER VMToBackup
     Name of the ARM VM to Backup.
 
@@ -85,7 +98,30 @@ Param
     [String]$BackupStorageRedundancy,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [String]$VMToBackup
+    [String[]]$DaysOfWeek,
+
+    # only in multipals of 00:30 minutes. e.g. 00:30, 01:00, 01:30 ... 12:00, 12:30 so on..
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$TimesOfDay,
+
+    # Valid values "Daily","Weekly"
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$ScheduleRunFrequency,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$VMBackupPolicyName,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$EnableWeeklyRetentionSchedule,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$EnableMonthlyRetentionSchedule,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$EnableYearlyRetentionSchedule,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String[]]$VMToBackup
 )
 
 Begin
@@ -301,11 +337,11 @@ Begin
             }
 
             # Validate parameter: VMToBackup
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMToBackup. Only ERRORs will be logged."
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: 'VMToBackup'. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($VMToBackup))
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMToBackup parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. VMToBackup parameter value is empty."
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. 'VMToBackup' parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. 'VMToBackup' parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -419,7 +455,7 @@ Process
             {
                Write-LogFile -FilePath $LogFilePath -LogText "Recovery Services Vault '$RSVaultName' does not exist. Creating Recovery Services Vault."
                ($RSVault = New-AzureRmRecoveryServicesVault -Name $RSVaultName -ResourceGroupName $ResourceGroupName -Location $Location -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-               Write-LogFile -FilePath $LogFilePath -LogText "Recovery Services Vault '$RSVaultName' created"
+               Write-LogFile -FilePath $LogFilePath -LogText "Recovery Services Vault '$RSVaultName' created successfully."
             }
             Catch
             {
@@ -462,13 +498,8 @@ Process
         Exit
     }
 
-
     Try
     {
-        Write-LogFile -FilePath $LogFilePath -LogText "Creating Backup policy."
-        $pol = Get-AzureRmRecoveryServicesBackupProtectionPolicy -Name "NewPolicy"
-        Write-LogFile -FilePath $LogFilePath -LogText "New Backup policy created successfully."
-
         Write-LogFile -FilePath $LogFilePath -LogText "Creating Backup schedule policy object."
         $schPol = Get-AzureRmRecoveryServicesBackupSchedulePolicyObject -WorkloadType AzureVM
         Write-LogFile -FilePath $LogFilePath -LogText "Backup schedule policy object created successfully."
@@ -476,6 +507,142 @@ Process
         Write-LogFile -FilePath $LogFilePath -LogText "Creating Backup retention policy object."
         $retPol = Get-AzureRmRecoveryServicesBackupRetentionPolicyObject -WorkloadType AzureVM
         Write-LogFile -FilePath $LogFilePath -LogText "Backup retention policy object created successfully."
+
+        Write-LogFile -FilePath $LogFilePath -LogText "Check if Backup policy already exists '$VMBackupPolicyName'."
+        ($pol = Get-AzureRmRecoveryServicesBackupProtectionPolicy -Name "$VMBackupPolicyName" -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+
+        If($pol -eq $null)
+        {
+            Write-LogFile -FilePath $LogFilePath -LogText "No Policy exist with name '$VMBackupPolicyName. Creating new Policy object."
+            ($pol = New-AzureRmRecoveryServicesBackupProtectionPolicy -Name "$VMBackupPolicyName" -WorkloadType AzureVM -RetentionPolicy $retPol -SchedulePolicy $schPol -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+            Write-LogFile -FilePath $LogFilePath -LogText "New Backup policy created successfully."
+        }
+
+        # Updating Policy run Schedule and Retention policy object
+        Try
+        {
+            Write-LogFile -FilePath $LogFilePath -LogText "Updating Policy run Schedule and retention policy object."
+
+            # Remove existing Schedules
+            Write-LogFile -FilePath $LogFilePath -LogText "Removing Default schedule and configuring new schedule based on user inputs."
+            $SchRunTimesCount = $schPol.ScheduleRunTimes.Count
+            If($SchRunTimesCount -gt 0)
+            {
+             Write-LogFile -FilePath $LogFilePath -LogText "Removing Default Run times."
+               for ($i = 0; $i -lt $SchRunTimesCount; $i++)
+                {
+                    $i | Out-Null
+                    $schPol.ScheduleRunTimes.RemoveAt($i);
+                }
+             Write-LogFile -FilePath $LogFilePath -LogText "Default Run times removed successfully."
+            }
+            $SchRunDaysCount = $schPol.ScheduleRunDays.Count
+            If($SchRunDaysCount -gt 0)
+            {
+             Write-LogFile -FilePath $LogFilePath -LogText "Removing Default Run days."
+                for ($j = 0; $j -lt $SchRunDaysCount; $j++)
+                {
+                    $j | Out-Null
+                    $schPol.ScheduleRunDays.RemoveAt($j);
+             Write-LogFile -FilePath $LogFilePath -LogText "Default Run days removed successfully."
+                }
+            }
+
+            If($ScheduleRunFrequency -eq "Daily")
+            {
+                 Write-LogFile -FilePath $LogFilePath -LogText "Setting schedule run frequency to Daily."
+
+                $schPol.ScheduleRunFrequency = $ScheduleRunFrequency
+                $schPol.ScheduleRunDays.Add($DaysOfWeek[0])
+                $schPol.ScheduleRunTimes.Add((Get-Date -Date $TimesOfDay).ToUniversalTime())
+                $retPol.IsDailyScheduleEnabled = $true
+                If($EnableWeeklyRetentionSchedule -eq "Yes")
+                { $retPol.IsWeeklyScheduleEnabled = $true }
+                Else
+                { $retPol.IsWeeklyScheduleEnabled = $false }
+
+                If($EnableMonthlyRetentionSchedule -eq "Yes")
+                { $retPol.IsMonthlyScheduleEnabled = $true }
+                Else
+                { $retPol.IsMonthlyScheduleEnabled = $false }
+
+                If($EnableYearlyRetentionSchedule -eq "Yes")
+                { $retPol.IsYearlyScheduleEnabled = $true }
+                Else
+                { $retPol.IsYearlyScheduleEnabled = $false }
+
+                 Write-LogFile -FilePath $LogFilePath -LogText "Schedule run frequency set to evry '$($DaysOfWeek[0])' at $((Get-Date -Date $TimesOfDay).ToUniversalTime()) UTC."
+
+                 Write-LogFile -FilePath $LogFilePath -LogText "Updating Backup policy with new schedule."
+                (Set-AzureRmRecoveryServicesBackupProtectionPolicy -Policy $pol -SchedulePolicy $schPol -RetentionPolicy $retPol -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                 Write-LogFile -FilePath $LogFilePath -LogText "Backup policy has been updated successfully for new schedule."
+            }
+            ElseIf($ScheduleRunFrequency -eq "Weekly")
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Setting schedule run frequency to Weekly."
+                $schPol.ScheduleRunFrequency = $ScheduleRunFrequency
+
+                Write-LogFile -FilePath $LogFilePath -LogText "Removing existing weekly Retention schedule."
+                $RetPolDaysCount = $retPol.WeeklySchedule.DaysOfTheWeek.Count
+                If($RetPolDaysCount -gt 0)
+                {
+                    for ($k = 0; $k -lt $RetPolDaysCount; $k++)
+                    { 
+                        $retPol.WeeklySchedule.DaysOfTheWeek.RemoveAt($k)
+                    }
+                }
+
+                Write-LogFile -FilePath $LogFilePath -LogText "Updating weekly Retention schedule and schedule run days."
+                foreach ($day in $DaysOfWeek)
+                {
+                    $schPol.ScheduleRunDays.Add($day)
+                    $retPol.WeeklySchedule.DaysOfTheWeek.Add($day)
+                }
+
+                $SchRunTimesCount = $schPol.ScheduleRunTimes.Count
+                If($SchRunTimesCount -gt 0)
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Removing existing schedule run times."
+                    for ($i = 0; $i -lt $SchRunTimesCount; $i++)
+                    {
+                        $schPol.ScheduleRunTimes.RemoveAt($i);
+                    }
+                    Write-LogFile -FilePath $LogFilePath -LogText "Setting schedule run time to $((Get-Date -Date $TimesOfDay).ToUniversalTime()) UTC."
+                    $schPol.ScheduleRunTimes.Add((Get-Date -Date $TimesOfDay).ToUniversalTime())
+                }
+                Else
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Setting schedule run time to $((Get-Date -Date $TimesOfDay).ToUniversalTime()) UTC."
+                    $schPol.ScheduleRunTimes.Add((Get-Date -Date $TimesOfDay).ToUniversalTime())
+                }
+
+                Write-LogFile -FilePath $LogFilePath -LogText "Updating Retention schedule."
+                $retPol.IsDailyScheduleEnabled = $false
+                $retPol.IsWeeklyScheduleEnabled = $true
+                If($EnableMonthlyRetentionSchedule -eq "Yes")
+                { $retPol.IsMonthlyScheduleEnabled = $true }
+                Else
+                { $retPol.IsMonthlyScheduleEnabled = $false }
+
+                If($EnableYearlyRetentionSchedule -eq "Yes")
+                { $retPol.IsYearlyScheduleEnabled = $true }
+                Else
+                { $retPol.IsYearlyScheduleEnabled = $false }
+                Write-LogFile -FilePath $LogFilePath -LogText "Retention schedule updated successfully."
+
+                Write-LogFile -FilePath $LogFilePath -LogText "Updating Backup Protection policy as per the new changes made."
+                (Set-AzureRmRecoveryServicesBackupProtectionPolicy -Policy $pol -SchedulePolicy $schPol -RetentionPolicy $retPol -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                Write-LogFile -FilePath $LogFilePath -LogText "Backup Protection policy has been updated as per new changes made."
+            }
+        }
+        Catch
+        {
+            $ObjOut = "Error while configuring backup schedule/retention policy. Check log file for more details.`r`n$($Error[0].Exception.Message)"
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            Write-Output $output
+            Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+            Exit
+        }
 
         Write-LogFile -FilePath $LogFilePath -LogText "Enabling Recovery Services Backup Protection for VM '$VMToBackup'."
         Enable-AzureRmRecoveryServicesBackupProtection -Policy $pol -Name $VMToBackup -ResourceGroupName $ResourceGroupName
