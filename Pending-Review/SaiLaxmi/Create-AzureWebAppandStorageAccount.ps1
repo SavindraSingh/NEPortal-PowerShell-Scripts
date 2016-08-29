@@ -575,33 +575,34 @@ Process
 
     # 5. Add Metric Alerts to Web App and Service Plan
     Try
-    {        
+    {    
+          
         $Name = "ServerErrors"+$WebAppName        
         $alertcheck1 = Check-Alert -Name $Name
-        If($alertcheck1 -ne $null){
+        If($alertcheck1 -eq $null){
             Write-LogFile -FilePath $LogFilePath -LogText "Trying to Add Alert Rule '$Name'."
-            Add-AzureRmMetricAlertRule -Name $Name -MetricName "Http Server Errors" -Operator GreaterThan -Threshold "0" -WindowSize PT5M  -ResourceGroup $ResourceGroupName -TargetResourceId $WACheck.Id -ErrorAction Stop
+            $addalert = Add-AzureRmMetricAlertRule -Name $Name -MetricName "Http5xx" -Operator GreaterThan -Threshold "0" -WindowSize 00:05:00  -ResourceGroup $ResourceGroupName -TargetResourceId $WACheck.Id -TimeAggre Total -Location $Location -ErrorAction Stop
             Write-LogFile -FilePath $LogFilePath -LogText "Successfully Added Alert Rule '$Name'."
         }
         $Name = "ForbiddenRequests"+$WebAppName
         $alertcheck1 = Check-Alert -Name $Name
-        If($alertcheck1 -ne $null){
+        If($alertcheck1 -eq $null){
             Write-LogFile -FilePath $LogFilePath -LogText "Trying to Add Alert Rule '$Name'."
-            Add-AzureRmMetricAlertRule -Name $Name -MetricName "Http403" -Operator GreaterThan -Threshold "0" -WindowSize PT5M -ResourceGroup $ResourceGroupName -TargetResourceId $WACheck.Id -ErrorAction Stop
+            $addalert = Add-AzureRmMetricAlertRule -Name $Name -MetricName "Http403" -Operator GreaterThan -Threshold "0" -WindowSize 00:05:00 -ResourceGroup $ResourceGroupName -TargetResourceId $WACheck.Id -TimeAggre Total -Location $Location -ErrorAction Stop
             Write-LogFile -FilePath $LogFilePath -LogText "Successfully Added Alert Rule '$Name'."
         }
         $Name = "CPUHighUtil"+$AppServicePlanName
         $alertcheck1 = Check-Alert -Name $Name
-        If($alertcheck1 -ne $null){
+        If($alertcheck1 -eq $null){
             Write-LogFile -FilePath $LogFilePath -LogText "Trying to Add Alert Rule '$Name'."
-            Add-AzureRmMetricAlertRule -Name $Name -MetricName "CPU Percentage" -Operator GreaterThan -Threshold "90" -WindowSize PT15M -ResourceGroup $ResourceGroupName -TargetResourceId $ASPCheck.Id -ErrorAction Stop
+            $addalert = Add-AzureRmMetricAlertRule -Name $Name -MetricName "CpuPercentage" -Operator GreaterThan -Threshold "90" -WindowSize 00:15:00 -ResourceGroup $ResourceGroupName -TargetResourceId $ASPCheck.Id -TimeAggre Total -Location $Location -ErrorAction Stop
             Write-LogFile -FilePath $LogFilePath -LogText "Successfully Added Alert Rule '$Name'."
         }
         $Name = "HttpQueueLength"+$AppServicePlanName
         $alertcheck1 = Check-Alert -Name $Name
-        If($alertcheck1 -ne $null){
+        If($alertcheck1 -eq $null){
             Write-LogFile -FilePath $LogFilePath -LogText "Trying to Add Alert Rule '$Name'."
-            Add-AzureRmMetricAlertRule -Name $Name -MetricName "Http Queue Length" -Operator GreaterThan -Threshold "100" -WindowSize PT5M -ResourceGroup $ResourceGroupName -TargetResourceId $ASPCheck.Id -ErrorAction Stop
+            $addalert = Add-AzureRmMetricAlertRule -Name $Name -MetricName "HttpQueueLength" -Operator GreaterThan -Threshold "100" -WindowSize 00:05:00 -ResourceGroup $ResourceGroupName -TargetResourceId $ASPCheck.Id -TimeAggre Total -Location $Location -ErrorAction Stop
             Write-LogFile -FilePath $LogFilePath -LogText "Successfully Added Alert Rule '$Name'."
         }
     }
