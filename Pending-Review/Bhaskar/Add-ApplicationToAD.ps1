@@ -81,6 +81,9 @@ Param
     [String]$ResourceGroupName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$AppDisplayName,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
     [String]$ApplicationURI, 
 
     [Parameter(ValueFromPipelineByPropertyName)]
@@ -266,6 +269,17 @@ Begin
                 Exit
             }
 
+            # Validate parameter: AppDisplayName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: AppDisplayName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($AppDisplayName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AppDisplayName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. AppDisplayName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
             # Validate parameter: ApplicationURI
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: ApplicationURI. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($ApplicationURI))
@@ -337,98 +351,73 @@ Process
     # 1. Login to Azure subscription
     Login-ToAzureAccount
 
-    # 2. Check if Resource Group exists. Create Resource Group if it does not exist.
-    Try
-    {
-       Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
-        $ResourceGroup = $null
-        ($ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue) | Out-Null
-    
-        If($ResourceGroup -ne $null) # Resource Group already exists
-        {
-           Write-LogFile -FilePath $LogFilePath -LogText "Resource Group already exists"
-        }
-        Else # Resource Group does not exist. Can't continue without creating resource group.
-        {
-            Try
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' does not exist. Creating resource group."
-                ($ResourceGroup = New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Location) | Out-Null
-                Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' created"
-            }
-            Catch
-            {
-                $ObjOut = "Error while creating Azure Resource Group '$ResourceGroupName'.`r`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut"
-                Exit
-            }
-        }
-    }
-    Catch
-    {
-        $ObjOut = "Error while getting Azure Resource Group details.`r`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
-        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-        Write-Output $output
-        Write-LogFile -FilePath $LogFilePath -LogText $ObjOut
-        Exit
-    }
-
-    # 3. Register application and Assign Roles.
+    # 2. Register application and Assign Roles.
 
     try 
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Getting the Tenant ID.."
-        ($TenantID = (Get-AzureRmSubscription).TenantId ) | Out-Null
-        
-        ($NewAppStatus = New-AzureRmADApplication -DisplayName $AppDisplayName -IdentifierUris $ApplicationURI -HomePage $ApplocationHomePage -Password $Password -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-        if($NewAppStatus -ne $null)
-        {
-            Write-LogFile -FilePath $LogFilePath -LogText "New application has been created successfully."
-            $ApplicationID = $NewAppStatus.ApplicationId
+        ($TenantID = (Get-AzureRmSubscription -SubscriptionId $AzureSubscriptionID -ErrorAction SilentlyContinue -WarningAction SilentlyContinue).TenantId ) | Out-Null
 
-            Write-LogFile -FilePath $LogFilePath -LogText "Creating the new Service Principal"
-            ($NewServicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $ApplicationID -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-            if($NewServicePrincipal -ne $null)
+        Write-LogFile -FilePath $LogFilePath -LogText "Checking for the Application URI existence in the subscription.."
+        ($ExistingApps = Get-AzureRmADApplication -IdentifierUri $ApplicationURI -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+        if($ExistingApps -eq $null)
+        {       
+            ($NewAppStatus = New-AzureRmADApplication -DisplayName $AppDisplayName -IdentifierUris $ApplicationURI -HomePage $ApplocationHomePage -Password $Password -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+            if($NewAppStatus -ne $null)
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Service Principal has been created successfully."
-                Write-LogFile -FilePath $LogFilePath -LogText "Assigning AD Role permissions to the application."
+                Write-LogFile -FilePath $LogFilePath -LogText "New application has been created successfully."
+                $ApplicationID = $NewAppStatus.ApplicationId
 
-                ($RoleStatus = New-AzureRmRoleAssignment -RoleDefinitionName Reader -ServicePrincipalName $($NewAppStatus.ApplicationId.Guid) -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-
-                if($RoleStatus -ne $null)
+                Write-LogFile -FilePath $LogFilePath -LogText "Creating the new Service Principal"
+                ($NewServicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $ApplicationID -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                if($NewServicePrincipal -ne $null)
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Application has been created and added to Azure Active Directory.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Application has been created and added to Azure Active Directory."
-                    $output = (@{"Response" = [Array]$ObjOut; Status = "Success";TenantID = $TenantID; SubscriptionID = $AzureSubscriptionID; ApplicationID = $ApplicationID} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                    Write-Output $output
+                    Write-LogFile -FilePath $LogFilePath -LogText "Service Principal has been created successfully."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Assigning AD Role permissions to the application."
+
+                    ($RoleStatus = New-AzureRmRoleAssignment -RoleDefinitionName Reader -ServicePrincipalName $($NewAppStatus.ApplicationId.Guid) -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+
+                    if($RoleStatus -ne $null)
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Application has been created and added to Azure Active Directory.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Application has been created and added to Azure Active Directory."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Success";TenantID = $TenantID; SubscriptionID = $AzureSubscriptionID; ApplicationID = $ApplicationID} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                    }
+                    else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Application Registration was failed.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Application Registration was failed."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
                 }
-                else
+                Else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Application Registration was failed.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Application Registration was failed."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Creating the New Service Principal was failed.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Creating the New Service Principal was failed."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
-                    Exit
+                    Exit                
                 }
             }
             Else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Creating the New Service Principal was failed.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Creating the New Service Principal was failed."
+                Write-LogFile -FilePath $LogFilePath -LogText "Creating the New Application was failed.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Creating the New Application was failed."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
-                Exit                
+                Exit
             }
         }
-        Else
+        else
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Creating the New Application was failed.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Creating the New Application was failed."
+            Write-LogFile -FilePath $LogFilePath -LogText "Application with this URI $ApplicationURI is already exist.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Application with this URI $ApplicationURI is already exist."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
-            Exit
+            Exit            
         }
     }
     Catch
