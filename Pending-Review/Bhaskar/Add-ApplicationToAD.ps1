@@ -51,7 +51,8 @@
                                        3. Added Common parameter $ClientID to indicate the Client details in the logfile.
 
     .EXAMPLE
-    C:\PS> 
+    C:\PS> .\Add-ApplicationToAD.ps1 -ClientID 12345 -AzureUserNamer bhaskar@netenrich.com -AzurePassword Passw0rd1 -AzureSubscriptID ca68598c-ecc3-4abc-b7a2-1ecef33f278d
+ -Location 'East Asia' -ResourceGroupName testgrp -AppDisplayName ContosoApp -ApplicationURL https://www.contoso.com -ApplicationHomePage https://www.contoso.com/example -Passowrd 123456789
 
     .EXAMPLE
     C:\PS> 
