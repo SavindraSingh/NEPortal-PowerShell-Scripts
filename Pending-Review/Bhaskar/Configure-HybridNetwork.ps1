@@ -289,7 +289,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -417,9 +417,19 @@ Begin
             }
             Else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validating if VNetGatewaySubnetPrefix is valid IP Address. Only ERRORs will be logged."
-                $checkIP = $VNetGatewaySubnetPrefix.Split("/")[0]
-                If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                Write-LogFile -FilePath $LogFilePath -LogText "Validating if subnet2Prefix is valid IP Address. Only ERRORs will be logged."
+                if($VNetGatewaySubnetPrefix -match '^(\d{1,3}\.){3}\d{1,3}$|^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$'){
+                    $checkIP = $VNetGatewaySubnetPrefix.Split("/")[0]
+                    If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                    Else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VNetGatewaySubnetPrefix '$VNetGatewaySubnetPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. VNetGatewaySubnetPrefix '$VNetGatewaySubnetPrefix' is not a valid IP address."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
+                }
                 Else
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VNetGatewaySubnetPrefix '$VNetGatewaySubnetPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
@@ -489,17 +499,27 @@ Begin
                 }
                 Else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validating if LocalNetAddressPrefix is valid IP Address. Only ERRORs will be logged."
-                    $checkIP = $LocalNetAddressPrefix.Split("/")[0]
-                    If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
-                    Else
-                    {
-                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. LocalNetAddressPrefix '$LocalNetAddressPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "Validation failed. LocalNetAddressPrefix '$LocalNetAddressPrefix' is not a valid IP address."
-                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                        Write-Output $output
-                        Exit
-                    }
+                   Write-LogFile -FilePath $LogFilePath -LogText "Validating if LocalNetAddressPrefix is valid IP Address. Only ERRORs will be logged."
+                   if($LocalNetAddressPrefix -match '^(\d{1,3}\.){3}\d{1,3}$|^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$'){
+                       $checkIP = $LocalNetAddressPrefix.Split("/")[0]
+                       If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                       Else
+                       {
+                           Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. LocalNetAddressPrefix '$LocalNetAddressPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                           $ObjOut = "Validation failed. LocalNetAddressPrefix '$LocalNetAddressPrefix' is not a valid IP address."
+                           $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                           Write-Output $output
+                           Exit
+                       }
+                   }
+                   Else
+                   {
+                       Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. LocalNetAddressPrefix '$LocalNetAddressPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                       $ObjOut = "Validation failed. LocalNetAddressPrefix '$LocalNetAddressPrefix' is not a valid IP address."
+                       $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                       Write-Output $output
+                       Exit
+                   }
                 }
                        
                 # Validate parameter: LocalNetVPNGatewayIP
@@ -585,9 +605,9 @@ Begin
             Else
             {
 
-                # Validate parameter: CirtcuitName
+                # Validate parameter: CircuitName
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: CirtcuitName. Only ERRORs will be logged."
-                If([String]::IsNullOrEmpty($CirtcuitName))
+                If([String]::IsNullOrEmpty($CircuitName))
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. CirtcuitName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. CirtcuitName parameter value is empty."
@@ -739,7 +759,7 @@ Process
             Try
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' does not exist. Creating resource group."
-                ($ResourceGroup = New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Location) | Out-Null
+                ($ResourceGroup = New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Location -ErrorAction Stop) | Out-Null
                 Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' created"
             }
             Catch

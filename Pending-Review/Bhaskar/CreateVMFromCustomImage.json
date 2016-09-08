@@ -172,7 +172,7 @@
           "vmSize": "[parameters('vmSize')]"
         },
 		"availabilitySet":{
-			"id":"[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySet')]"
+			"id":"[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySet'))]"
 		},
         "osProfile": {
           "computername": "[parameters('vmName')]",

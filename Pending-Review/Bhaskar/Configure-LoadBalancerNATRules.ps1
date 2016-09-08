@@ -1,9 +1,9 @@
 ﻿<##
     .SYNOPSIS
-    Script to create New backup vault in Azure Resource Manager Portal
+    Script to create Load Balancers and NAT rules
 
     .DESCRIPTION
-    Script to create New backup vault in Azure Resource Manager Portal
+    Script to create Load Balancers and NAT rules
 
     .PARAMETER ClientID
 
@@ -136,7 +136,8 @@
                                        2. Check minumum required version of Azure PowerShell
 
     .EXAMPLE
-    C:\PS>.\Configure-LoadBalancerNATRules.ps1 -ClientID 12345 -AzureUserName bhaskar@netenrich.com -AzurePassword ***** -AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d -Location 'Southeast Asia' -ResourceGroupName 'testgrp' -LoadBalancerName TestLB LoadBalancerType Internal -PublicIPAddressName <NA> -VirtualNetworkName testvnet -SubnetName infrasubnet -IPAddressType Static -StaticIPAddress 10.0.0.8 -ProbeName LBProbe -ProbeProtocol http -ProbePort 80 -ProbePath /index.html -ProbeInterval 5 -ProbeUnhealthythreshold 2 -BackEndPoolName testbackpool -InboundNATRuleName InRule -InboundProtocol tcp -InboundPort 80 -InboundBackEndPort 80 -LoadBalancerRuleName LBrule -LoadBalancingProtocol tcp -LoadBalancingPort 80 -BackEndPort 80
+        C:\PS>.\Configure-LoadBalancerNATRules.ps1 -ClientID 12345 -AzureUserName bhaskar@netenrich.com -AzurePassword ***** -AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d -Location 'Southeast Asia' -ResourceGroupName 'testgrp' -LoadBalancerName TestLB LoadBalancerType Internal -VirtualNetworkName testvnet -SubnetName infrasubnet -IPAddressType Static -StaticIPAddress 10.0.0.8 -ProbeName LBProbe -ProbeProtocol http -ProbePort 80 -ProbePath /index.html -ProbeInterval 5 -ProbeUnhealthythreshold 2 -BackEndPoolName testbackpool -InboundNATRuleName InRule -InboundProtocol tcp -InboundPort 80 -InboundBackEndPort 80 -LoadBalancerRuleName LBrule -LoadBalancingProtocol tcp -LoadBalancingPort 80 -BackEndPort 80
+
 
     .LINK
     http://www.netenrich.com/#>
@@ -321,7 +322,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -438,20 +439,38 @@ Begin
                 }
             }
 
-            if($PublicIPAddressName -ne $null)
+            #validating parameters required for 'public' load balancer.
+            If($LoadBalancerType -eq 'Public')
             {
                 # Validate parameter: PublicIPAddressName
-                Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: PublicIPAddressName. Only ERRORs will be logged."
-                If([String]::IsNullOrEmpty($PublicIPAddressName))
+                if($PublicIPAddressName -ne $null)
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. PublicIPAddressName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. PublicIPAddressName parameter value is empty."
-                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                    Write-Output $output
-                    Exit
+
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: PublicIPAddressName. Only ERRORs will be logged."
+                    If([String]::IsNullOrEmpty($PublicIPAddressName))
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. PublicIPAddressName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. PublicIPAddressName parameter value is empty."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
                 }
+                Else
+                {                
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validating if PublicIPAddressName is valid IP Address. Only ERRORs will be logged."
+                    If([bool]($PublicIPAddressName -as [ipaddress])) { <# Valid IP address #>}
+                    Else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. PublicIPAddressName $StaticIPAddress is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. PublicIPAddressName $PublicIPAddressName is not a valid IP address."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
+                }                                
             }
-            Else
+            Else #validting parameters required for internal load balancer
             {
                 # Validate parameter: VirtualNetworkName
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VirtualNetworkName. Only ERRORs will be logged."
@@ -498,28 +517,32 @@ Begin
                     }
                 }
 
-                # Validate parameter: StaticIPAddress
-                Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: StaticIPAddress. Only ERRORs will be logged."
-                If([String]::IsNullOrEmpty($StaticIPAddress))
+                If ($IPAddressType -eq 'Static')
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. StaticIPAddress parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. StaticIPAddress parameter value is empty."
-                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                    Write-Output $output
-                    Exit
-                }
-                Else
-                {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validating if StaticIPAddress is valid IP Address. Only ERRORs will be logged."
-                    If([bool]($StaticIPAddress -as [ipaddress])) { <# Valid IP address #>}
-                    Else
+                    # Validate parameter: StaticIPAddress
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: StaticIPAddress. Only ERRORs will be logged."
+                    If([String]::IsNullOrEmpty($StaticIPAddress))
                     {
-                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. StaticIPAddress $StaticIPAddress is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "Validation failed. StaticIPAddress $StaticIPAddress is not a valid IP address."
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. StaticIPAddress parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. StaticIPAddress parameter value is empty."
                         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                         Exit
                     }
+                    Else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validating if StaticIPAddress is valid IP Address. Only ERRORs will be logged."
+                        If([bool]($StaticIPAddress -as [ipaddress])) { <# Valid IP address #>}
+                        Else
+                        {
+                            Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. StaticIPAddress $StaticIPAddress is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                            $ObjOut = "Validation failed. StaticIPAddress $StaticIPAddress is not a valid IP address."
+                            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                            Write-Output $output
+                            Exit
+                        }
+                    }                
+
                 }
             }
 
@@ -609,10 +632,10 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $ProbeInterval is a valid number.Only ERRORs will be logged."
                 $ProbeInterval = [Int32]$ProbeInterval
-                if($ProbeInterval -notin (1..65535))
+                if($ProbeInterval -notin (5..2147483646))
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeInterval $ProbeInterval is not a valid Port Number.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. ProbeInterval $ProbeInterval is not a valid Port Number."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeInterval $ProbeInterval is not a valid Number.it must be in (5 to 2147483646).`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. ProbeInterval $ProbeInterval is not a valid Number.it must be in (5 to 2147483646)."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit                    
@@ -633,10 +656,10 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $ProbeUnhealthythreshold is a valid number.Only ERRORs will be logged."
                 $ProbeUnhealthythreshold = [Int32]$ProbeUnhealthythreshold
-                if($ProbeUnhealthythreshold -notin (1..65535))
+                if($ProbeUnhealthythreshold -notin (2..429496729))
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeUnhealthythreshold $ProbeUnhealthythreshold is not a valid Port Number.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. ProbeUnhealthythreshold $ProbeUnhealthythreshold is not a valid Port Number."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeUnhealthythreshold $ProbeUnhealthythreshold is not a valid Number.it must be in(2..429496729).`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. ProbeUnhealthythreshold $ProbeUnhealthythreshold is not a valid Number.it must be in(2..429496729)."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit                    
@@ -709,12 +732,24 @@ Begin
                     }
                 }
             }
+            else
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $InboundProtocol is a valid Type.Only ERRORs will be logged."
+                if($InboundProtocol -notin ('TCP','UDP'))
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundProtocol parameter value is not a valid type.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. InboundProtocol parameter value is not a valid type."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit                        
+                    }
+            }
 
             # Validate parameter: InboundPort
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: InboundPort. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($InboundPort))
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundPort parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $InboundPort parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. InboundPort parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
@@ -740,9 +775,22 @@ Begin
                     }
                 }
             }
+            else
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $InboundPort is a valid port number.Only ERRORs will be logged."
+                #$InboundPort = [Int32]$InboundPort
+                if([Int32]$InboundPort -notin (1..65535))
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundPort parameter value is not a vlaid port number.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. InboundPort parameter value is not a vlaid port number."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    Write-Output $output
+                    Exit                        
+                }                
+            }
 
             # Validate parameter: InboundBackEndPort
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: InboundBackEndPort. Only ERRORs will be logged."
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: $InboundBackEndPort. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($InboundBackEndPort))
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundBackEndPort parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
@@ -754,13 +802,13 @@ Begin
             If($InboundBackEndPort.Contains(","))
             {
                 $InboundBackPorts = @()
-                $InboundBackPorts = $InboundPort.Split(",")
+                $InboundBackPorts = $InboundBackEndPort.Split(",")
                 $Script:InboundBackEndPorts = @() 
 
                 foreach($InBackPort in $InboundBackPorts)
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $InBackPort is a valid port number.Only ERRORs will be logged."
-                    $Script:InboundPorts += [int32]$InBackPort
+                    $Script:InboundBackEndPorts += [int32]$InBackPort
                     if([Int32]$InBackPort -notin (1..65535))
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundProtocol parameter value is not a valid port number.`r`n<#BlobFileReadyForUpload#>"
@@ -771,7 +819,20 @@ Begin
                     }
                 }
             }
-
+            else
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $InboundBackEndPort is a valid port number.Only ERRORs will be logged."
+                #$InboundBackEndPort = [Int32]$InboundBackEndPort
+                write-host ([Int32]$InboundBackEndPortt -notin (1..65535))
+                if([Int32]$InboundBackEndPortt -notin (1..65535))
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundBackEndPort parameter value is not a vlaid port number.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. InboundBackEndPort parameter value is not a vlaid port number."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    Write-Output $output
+                    Exit                        
+                }
+            } 
             # Validate parameter: TargetVMorAvailabilitySet
             #Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: TargetVMorAvailabilitySet. Only ERRORs will be logged."
             #If([String]::IsNullOrEmpty($TargetVMorAvailabilitySet))

@@ -178,7 +178,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -256,17 +256,6 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-			# Validate parameter: VMName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($VMName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. VMName parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -408,7 +397,7 @@ Process
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existence of Virtual Network $VirtualNetworkName in the given $ResourceGroupName resource group."
         $VnetExist = $null
-        ($VnetExist = Get-AzureRmVirtualNetwork -Name $VirtualNetworkName -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+        ($VnetExist = Get-AzureRmVirtualNetwork -Name $VNetName -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($VnetExist)
         {
             Write-LogFile -FilePath $LogFilePath -LogText "The given Vnet is already exists"
@@ -451,15 +440,15 @@ Process
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Checking for the NSG Group existence."
 
-        ($NSGGroup = Get-AzureRmNetworkSecurityGroup -Name $NSGGroup -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
-        if($NSGGroup)
+        ($NSGGroupcheck = Get-AzureRmNetworkSecurityGroup -Name $NSGGroup -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+        if($NSGGroupcheck)
         {
             Write-LogFile -FilePath $LogFilePath -LogText "The Netwrok Security Group $NSGGroup is already exist."
         }
         else
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "The Virtual Machine $VMName does not exist in the resource group $ResourceGroupName.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "The Virtual Machine $VMName does not exist in the resource group $ResourceGroupName."
+            Write-LogFile -FilePath $LogFilePath -LogText "The Netwrok Security Group $NSGGroup does not exist in the resource group $ResourceGroupName.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "The Netwrok Security Group $NSGGroup does not exist in the resource group $ResourceGroupName."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
@@ -482,19 +471,19 @@ Process
         ($SubnetConfig = Get-AzureRmVirtualNetworkSubnetConfig -Name $SubnetName -VirtualNetwork $VnetExist -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($SubnetConfig)
         {
-            $SubnetConfig.NetworkSecurityGroup = $NSGGroup
+            $SubnetConfig.NetworkSecurityGroup = $NSGGroupcheck
             ($State = Set-AzureRmVirtualNetwork -VirtualNetwork $VnetExist -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($State.ProvisioningState -eq 'Succeeded')
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Association of Network Security Group to Subnet $SubnetName was successful.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Association of Network Security Group to VM $VMName was sucessful."
+                $ObjOut = "Association of Network Security Group to Subnet $SubnetName was sucessful."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
             }
             else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Association of Netwrok Security Group to Subnet was failed.`r`n<#BlobFileReadyForUpload#>."
-                $ObjOut = "Unable to fetch the Network Interface Card details."
+                $ObjOut = "Association of Netwrok Security Group to Subnet was failed."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -511,7 +500,7 @@ Process
     }
     catch
     {
-        $ObjOut = "Error while associating the Network Security Group to the Virtual Machine.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while associating the Network Security Group to the Subnet.$($Error[0].Exception.Message)"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"

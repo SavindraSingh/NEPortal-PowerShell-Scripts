@@ -200,7 +200,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -335,6 +335,18 @@ Begin
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
+            }
+            Else
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DomainMode. Only ERRORs will be logged."
+                If($DomainMode -notin ("Win2008","Win2008R2","Win2012","Win2012R2","Deafult"))
+                {
+                   Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainMode '$DomainMode' is NOT a valid value for this parameter.`r`n<#BlobFileReadyForUpload#>"
+                   $ObjOut = "Validation failed. DomainMode '$DomainMode' is not a valid value for this parameter."
+                   $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                   Write-Output $output
+                   Exit
+                }                
             }
         }
         Catch

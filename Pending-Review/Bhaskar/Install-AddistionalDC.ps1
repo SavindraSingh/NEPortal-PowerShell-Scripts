@@ -23,7 +23,7 @@ try
         # Configuring the Active Directory and Domain Services
         $SecurePassword = ConvertTo-SecureString -AsPlainText -String $Password -Force
         $Credential = New-Object System.Management.Automation.PSCredential($DomainAdmin,$SecurePassword)
-        ($DomainStatus = Install-ADDSDomainController -InstallDns -Credential $Credential -DomainName $DomainName -CreateDnsDelegation:$false -DatabasePath $DatabasePath -logpath $LogfilePath -sysvolpath $SysVolume -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null   
+        ($DomainStatus = Install-ADDSDomainController -InstallDns -Credential $Credential -DomainName $DomainName -CreateDnsDelegation:$false -DatabasePath $DatabasePath -logpath $LogfilePath -sysvolpath $SysVolume -SafeModeAdministratorPassword $SecurePassword -Confirm:$false -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null   
         # Importing the Active Directory Module
         Import-Module ActiveDirectory
         $DomainDetails = (Get-ADDomain).DNSRoot

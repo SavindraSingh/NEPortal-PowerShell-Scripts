@@ -192,7 +192,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -284,6 +284,29 @@ Begin
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
+            }
+            else
+            {
+                If($DomainUserName -contains "\")
+                {
+                    $dname = $DomainUserName.Split("\")[0]
+                    If($dname -ne $DomainName)
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUsername parameter value must be in the format of DomainName\username .`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. DomainUsername parameter value must be in the format of DomainName\username ."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
+                }
+                Else
+                {
+                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUsername parameter value must be in the format of DomainName\username .`r`n<#BlobFileReadyForUpload#>"
+                     $ObjOut = "Validation failed. DomainUsername parameter value must be in the format of DomainName\username ."
+                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                     Write-Output $output
+                     Exit
+                }
             }
 
             # Validate parameter: DomainUserPassword

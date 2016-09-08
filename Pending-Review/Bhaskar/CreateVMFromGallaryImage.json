@@ -111,7 +111,7 @@
 		}
 	},
     "variables": {
-	"publicIPAddressName":"[parameters('vmName')]",
+	"publicIPAddressName":"[parameters('dnsNameForPublicIP')]",
     "publicIPAddressType": "Dynamic",
     "vmStorageAccountContainerName": "vhds",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",

@@ -1,9 +1,9 @@
 ﻿<#
     .SYNOPSIS
-    Script to create New backup vault in Azure Resource Manager Portal
+    Script to attach static private IP address to ARM VM.
 
     .DESCRIPTION
-    Script to create New backup vault in Azure Resource Manager Portal
+    Script to attach static private IP address to ARM VM.
 
     .PARAMETER ClientID
     ClientID of the client for whom the script is being executed.
@@ -17,14 +17,17 @@
     .PARAMETER AzureSubscriptionID
     Azure Subscription ID to use for this activity.
 
-    .PARAMETER Location
-    Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
-
     .PARAMETER ResourceGroupName
     Name of the Azure ARM resource group to use for this command.
 
+    .PARAMETER Location
+    Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
+
     .PARAMETER VMName
     Name of the Virtual Machine to be used for this command.
+
+    .PARAMETER NICCardNames
+    NIC Card Names
 
     .PARAMETER StaticIPAddress
     Static IP Address to be used for this command.
@@ -51,7 +54,7 @@
                                        3. Added Common parameter $ClientID to indicate the Client details in the logfile.
 
     .EXAMPLE
-    C:\PS> .\Attach-StaticIPToVM.ps1 -ClientID 12345 -AzureUserName testlab@netenrich.com -AzurePassword **** -AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d  -Location 'Southeast Asia' -ResourceGroupName mytestgrp -VMName myvm -StaticIPAddress 10.0.1.7 -NICCardNames vm123
+    C:\PS> .\Attach-StaticIPToVM.ps1 -ClientID 12345 -AzureUserName testlab@netenrich.com -AzurePassword **** -AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d -ResourceGroupName mytestgrp -VMName myvm -StaticIPAddress 10.0.1.7 -NICCardNames vm123
 
     .LINK
     http://www.netenrich.com/#>
@@ -72,10 +75,10 @@ Param
     [string]$AzureSubscriptionID,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$Location,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
     [String]$ResourceGroupName,
+
+	[Parameter(ValueFromPipelineByPropertyName)]
+    [String]$Location,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [String]$VMName,
@@ -179,7 +182,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -189,7 +192,7 @@ Begin
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
-        #Exit
+        Exit
     }
 
     Function Validate-AllParameters
@@ -240,23 +243,23 @@ Begin
                 Exit
             }
 
-            # Validate parameter: Location
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: Location. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($Location))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. Location parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
             # Validate parameter: ResourceGroupName
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: ResourceGroupName. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($ResourceGroupName))
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: Location
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: Location. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($Location))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. Location parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -336,6 +339,14 @@ Begin
             }
 
             # Validating the NIC Cards numbers and IP Addresses Provided
+            if(([String]::IsNullOrEmpty($NICCardNames)) -and ($script:IPAddresses.Count -gt 1))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation Failed. The number of IP addresses provided not equal to nic card names.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation warning. The number IP provided and number of NIC card names provided are not equal. If miltiple ip address are given provide their NIC Names"
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
             if($NICCardNames -ne "")
             {
                 if($NICCardNames.Contains(",") -and ($Script:NICCards.Count -eq $script:IPAddresses.Count))
@@ -344,7 +355,7 @@ Begin
                 Elseif($NICCardNames -notContains "," -and ($StaticIPAddress.Contains(",")))
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation Failed. The number NICCards provided and number of IP address provided are not equal.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation warming. The number NICCards provided and number of IP address provided are not equal."
+                    $ObjOut = "Validation warning. The number NICCards provided and number of IP address provided are not equal."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit                 
@@ -449,9 +460,9 @@ Process
     # 3. Check if Resource Group exists. Create Resource Group if it does not exist.
     Try
     {
-       Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
+        Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
         $ResourceGroup = $null
-        ($ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue) | Out-Null
+        ($ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue -WariningAction SilentlyContinue) | Out-Null
     
         If($ResourceGroup -ne $null) # Resource Group already exists
         {
@@ -459,20 +470,11 @@ Process
         }
         Else # Resource Group does not exist. Can't continue without creating resource group.
         {
-            Try
-            {
-               Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' does not exist. Creating resource group."
-                ($ResourceGroup = New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Location) | Out-Null
-               Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' created"
-            }
-            Catch
-            {
-                $ObjOut = "Error while creating Azure Resource Group '$ResourceGroupName'.`r`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut"
-                Exit
-            }
+            $ObjOut = "The resource group $ResourceGroup does not exist.`r`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            Write-Output $output
+            Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut"
+            exit
         }
     }
     Catch
@@ -526,7 +528,7 @@ Process
             if($Script:NICCards.Count -eq $NICInterfaces.Count)
             {   
                 $Result = Compare-Object -ReferenceObject $NICCardInterfaceNames -DifferenceObject $Script:NICCards
-                if($Result -ne $null)
+                if($Result -eq $null)
                 {
                     $ExitCode = 0
                     for($i =0;$i -lt $Script:NICCards.Count;$i++)
@@ -543,18 +545,22 @@ Process
                                 $ExitCode = 1
                             }
                         }
+                        else
+                        {
+                            $ExitCode = 1
+                        }
                     }
                     if($ExitCode -eq 0)
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "All the NIC Cards have been successfully attached with Static IPs provided.`r`n<#BlobFileReadyForUpload#>"
                         $ObjOut = "All the NIC Cards have been successfully attached with Static IPs provided."
-                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output                        
                     }
                     Else
                     {
-                        Write-LogFile -FilePath $LogFilePath -LogText "The Number of Nics provided and the number nic cards that VM has not equal.`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "The Virtual Machine $VMName does not exist in the resource group $ResourceGroupName."
+                        Write-LogFile -FilePath $LogFilePath -LogText "Unable to Get the Info of provided NIC / Provided NIC Info is wrong.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Unable to Get the Info of provided NIC / Provided NIC Info is wrong"
                         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                         Exit
@@ -563,7 +569,7 @@ Process
                 Else
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "The Number of Nics provided and the number nic cards that VM has not equal.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "The Virtual Machine $VMName does not exist in the resource group $ResourceGroupName."
+                    $ObjOut = "The Number of Nics provided and the number nic cards that VM has not equal"
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -572,7 +578,7 @@ Process
             Else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "The Number of Nics provided and the number nic cards that VM has not equal.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "The Virtual Machine $VMName does not exist in the resource group $ResourceGroupName."
+                $ObjOut = "The Number of Nics provided and the number nic cards that VM has not equal."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit                

@@ -274,14 +274,14 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion.Major -ge 1 -and $AzurePSVersion.Minor -ge 4)
+    If($AzurePSVersion -gt 1.4)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
     Else 
     {
         $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
         Exit
@@ -308,7 +308,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AzureUserName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. AzureUserName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -319,7 +319,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AzurePassword parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. AzurePassword parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -330,7 +330,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AzureSubscriptionID parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. AzureSubscriptionID parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -341,7 +341,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. Location parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -352,7 +352,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. VMName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -363,7 +363,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. PublisherName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. PublisherName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -375,7 +375,7 @@ Begin
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Provided Publisher name $PublisherName is not valid.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. Provided Publisher name $PublisherName is not valid."
-                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
                 }
@@ -387,7 +387,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. OfferName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. OfferName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -399,7 +399,7 @@ Begin
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Provided OfferName name $OfferName is not valid.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. Provided OfferName name $OfferName is not valid."
-                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
                 }
@@ -411,7 +411,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SKUName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. SKUName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -422,7 +422,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AdminUserName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. AdminUserName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -432,7 +432,7 @@ Begin
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AdminUserName should not be default usernames.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. Validation failed. AdminUserName should not be default usernames."
-                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
                 }
@@ -444,7 +444,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AdminPassword parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. AdminPassword parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -454,7 +454,7 @@ Begin
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AdminPassword should be strong enough.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. AdminPassword should be strong enough."
-                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
                 }
@@ -466,7 +466,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMSize parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. VMSize parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -477,7 +477,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. AvailabilitySetName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. AvailabilitySetName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -488,7 +488,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DeploymentName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. DeploymentName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -499,7 +499,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -510,7 +510,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. StorageAccountName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. StorageAccountName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -525,7 +525,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VirtualNetworkName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. VirtualNetworkName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -536,7 +536,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SubnetName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. SubnetName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }   
@@ -547,7 +547,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DNSNameForPublicIP parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. DNSNameForPublicIP parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             } 
@@ -558,7 +558,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. TemplateJSONPath parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. TemplateJSONPath parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -569,7 +569,7 @@ Begin
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "File/path not found '$TemplateJSONPath'.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "File/path not found '$TemplateJSONPath'."
-                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
                 }
@@ -581,7 +581,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ParameterJSONPath parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ParameterJSONPath parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -599,7 +599,7 @@ Begin
                     Catch
                     {
                         $ObjOut = "Unable to create required folder/path '$ParameterJSONPath'."
-                        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                         Write-LogFile -FilePath $LogFilePath -LogText "Unable to create required folder/path '$ParameterJSONPath'`r`n<#BlobFileReadyForUpload#>"
                         Exit
@@ -611,7 +611,7 @@ Begin
         {
             Write-LogFile -FilePath $LogFilePath -LogText "Error while validating parameters: $($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
             $ObjOut = "Error while validating parameters: $($Error[0].Exception.Message)"
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
         }
@@ -631,7 +631,7 @@ Begin
         {
             $ObjOut = "Error logging in to Azure Account.`n$($Error[0].Exception.Message)."
             Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
         }
@@ -671,7 +671,7 @@ Process
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Registering the provider $NameSpace was not successful.`r`n<#BlobFileReadyForUpload#>" 
                 $ObjOut = "Registering the provider $NameSpace was not successful."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
@@ -680,7 +680,7 @@ Process
     catch
     {
         $ObjOut = "Error while registering the Resource provide namespace.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
@@ -708,7 +708,7 @@ Process
             Catch
             {
                 $ObjOut = "Error while creating Azure Resource Group '$ResourceGroupName'.$($Error[0].Exception.Message)"
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
                 Exit
@@ -718,7 +718,7 @@ Process
     Catch
     {
         $ObjOut = "Error while getting Azure Resource Group details.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
@@ -739,7 +739,7 @@ Process
         {
             Write-LogFile -FilePath $LogFilePath -LogText "The location does not support the given VMSize.`r`n<#BlobFileReadyForUpload#>" 
             $ObjOut = "Validation failed. The location does not support the given VMSize."
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
         }
@@ -747,7 +747,7 @@ Process
     catch
     {
         $ObjOut = "Error while getting Azure vm sizes for the locaion. $($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
@@ -773,7 +773,7 @@ Process
              {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. The Provided Subnet does not exist in given virtual Network $VirtualNetworkName.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. The Provided Subnet does not exist in given virtual Network $VirtualNetworkName."
-                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
              }
@@ -782,7 +782,7 @@ Process
         {
             Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. The Provided virtual Network does not exist in the $ResourceGroupName resource group.`r`n<#BlobFileReadyForUpload#>"
             $ObjOut = "Validation failed. The Provided virtual Network does not exist in the $ResourceGroupName resource group."
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
         }   
@@ -790,7 +790,7 @@ Process
     catch
     {
         $ObjOut = "Error while getting Azure Virtual Network details.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
@@ -810,7 +810,7 @@ Process
         {
             Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. The Provided Storage Account does not exist in the $ResourceGroupName resource group.`r`n<#BlobFileReadyForUpload#>"
             $ObjOut = "Validation failed. The Provided Storage Account does not exist in the $ResourceGroupName resource group."
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
         }   
@@ -818,7 +818,7 @@ Process
     catch
     {
         $ObjOut = "Error while getting Azure Storage Account details.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
@@ -845,7 +845,7 @@ Process
     Catch
     {
         $ObjOut = "Error while Checking the $DNSNameForPublicIP Public IP details.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
@@ -886,16 +886,16 @@ Process
         ($Status = New-AzureRmResourceGroupDeployment -Name $DeploymentName -ResourceGroupName $ResourceGroupName -TemplateFile $TemplateJSONPath -TemplateParameterFile $ParameterJSONPath -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
         if($Status.ProvisioningState -eq 'Succeeded')
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine $VMName has been provisioned successfully.`r`n<#BlobFileReadyForUpload#>"
+            Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine $VMName has been provisioned successfully."
             $ObjOut = "Virtual Machine $VMName has been provisioned successfully."
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Success"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
         }
         else
         {
             Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine $VMName has not been provisioned successfully.`r`n<#BlobFileReadyForUpload#>"
             $ObjOut = "Virtual Machine $VMName has not been provisioned successfully."
-            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             exit
         }
@@ -903,7 +903,7 @@ Process
     Catch
     {
         $ObjOut = "Error while provisioining the virtual machine $VMName.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit

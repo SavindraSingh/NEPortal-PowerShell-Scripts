@@ -16,14 +16,14 @@ try
 {
     # Installing ServerManager Module
     Import-Module ServerManager
+
+    $SecurePassword = ConvertTo-SecureString -AsPlainText -String $Password -Force
     #Installing the Active Directory and Domain Services roles
     (Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-
     $RoleStatus = Get-WindowsFeature -Name "AD*"
     if($RoleStatus -ne $null)
     {
         # Configuring the Active Directory and Domain Services
-        $SecurePassword = ConvertTo-SecureString -AsPlainText -String $Password -Force
         ($DomainStatus = Install-ADDSForest -DomainName $DomainName -safemodeadministratorpassword $SecurePassword -domainnetbiosname $DomainNetBiosName -databasepath $DatabasePath -logpath $LogfilePath -sysvolpath $SysVolume -DomainMode $DomainMode -skipprechecks -SkipAutoConfigureDNS -InstallDns -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null   
         # Importing the Active Directory Module
         Import-Module ActiveDirectory
