@@ -132,17 +132,18 @@ Begin
     $LogFileName = "$ClientID-$($MyInvocation.MyCommand.Name.Replace('.ps1',''))-$FileTimeStamp.log"
     $LogFilePath = "C:\NEPortal\$LogFileName"
 
+    $ScriptUploadConfig = $null
     Function Get-BlobURIForLogFile
     {
         Try
         {
             $UC = Select-Xml -Path "C:\NEPortal\NEPortalApp.Config" -XPath configuration/appSettings -ErrorAction SilentlyContinue | Select -ExpandProperty Node | Select -ExpandProperty add
             $UploadConfig = [ordered]@{}; $UC | % { $UploadConfig += @{ $_.key = $_.Value } }
-            $ScriptUploadConfig = [PSCustomObject]$UploadConfig
+            $Script:ScriptUploadConfig = [PSCustomObject]$UploadConfig
 
-            $Container = $UploadConfig.Container
-            $StorageAccName = $UploadConfig.StorageAccName
-            $StorageAccKey = $UploadConfig.StorageAccKey
+            $Container = $ScriptUploadConfig.Container
+            $StorageAccName = $ScriptUploadConfig.StorageAccName
+            $StorageAccKey = $ScriptUploadConfig.StorageAccKey
 
             ($context = New-AzureStorageContext -StorageAccountName $StorageAccName -StorageAccountKey $StorageAccKey -ErrorAction Stop) | Out-Null
         }
@@ -150,7 +151,7 @@ Begin
         {
             Return "Error processing blob URI. Check if storage credentials are correct in 'C:\NEPortal\NEPortalApp.Config'"
         }
-        Return "$($context.BlobEndPoint)$($UploadConfig.Container)/$($LogFilename)"
+        Return "$($context.BlobEndPoint)$($ScriptUploadConfig.Container)/$($LogFilename)"
     }
 
     $LogFileBlobURI = Get-BlobURIForLogFile
@@ -216,13 +217,14 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion -gt '2.0')
+    If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
     {
-        Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
+        Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
