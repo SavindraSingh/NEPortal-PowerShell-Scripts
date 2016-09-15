@@ -135,10 +135,19 @@ Param
     [String]$EnableWeeklyRetentionSchedule,
 
     [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$NumberOfWeeks,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
     [String]$EnableMonthlyRetentionSchedule,
 
     [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$NumberOfMonths,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
     [String]$EnableYearlyRetentionSchedule,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$NumberOfYears,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [String[]]$VMToBackup
@@ -592,30 +601,21 @@ Process
     # 2. Check if Resource Group exists. Create Resource Group if it does not exist.
     Try
     {
-        Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
+        Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'."
         $ResourceGroup = $null
         ($ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction Stop) | Out-Null
     
         If($ResourceGroup -ne $null) # Resource Group already exists
         {
-           Write-LogFile -FilePath $LogFilePath -LogText "Resource Group already exists"
+           Write-LogFile -FilePath $LogFilePath -LogText "Resource Group already exists."
         }
         Else # Resource Group does not exist. Can't continue without creating resource group.
         {
-            Try
-            {
-               Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' does not exist. Creating resource group."
-               ($ResourceGroup = New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Location) | Out-Null
-               Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' created"
-            }
-            Catch
-            {
-                $ObjOut = "Error while creating Azure Resource Group '$ResourceGroupName'.`r`n$($Error[0].Exception.Message)"
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
-                Exit
-            }
+            $ObjOut = "Specified resource group '$ResourceGroupName' does not exist."
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            Write-Output $output
+            Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+            Exit
         }
     }
     Catch
@@ -640,39 +640,25 @@ Process
         }
         Else # Recovery Services Vault does not exist. Can't continue without creating Recovery Services Vault.
         {
-            Try
-            {
-               Write-LogFile -FilePath $LogFilePath -LogText "Recovery Services Vault '$RSVaultName' does not exist. Creating Recovery Services Vault."
-               ($RSVault = New-AzureRmRecoveryServicesVault -Name $RSVaultName -ResourceGroupName $ResourceGroupName -Location $Location -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-               Write-LogFile -FilePath $LogFilePath -LogText "Recovery Services Vault '$RSVaultName' created successfully."
-            }
-            Catch
-            {
-                $ObjOut = "Error while creating Azure Recovery Services Vault '$RSVaultName'.`r`n$($Error[0].Exception.Message)"
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
-                Exit
-            }
+            $ObjOut = "Specified Azure Recovery Services Vault '$RSVaultName' does not exists."
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            Write-Output $output
+            Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+            Exit
         }
     }
     Catch
     {
-        $ObjOut = "Error while getting Azure Recovery Services Vault details.`r`n$($Error[0].Exception.Message)"
+        $ObjOut = "Error while getting Azure Recovery Services Vault details.`r`n$($Error[0].Exception.Message)."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
     }
 
-    # Configure backup
+    # Update backup configuration
     Try
     {
-        # 4. Specify type of Storage/redundancy
-        #Write-LogFile -FilePath $LogFilePath -LogText "Setting-up Backup properties (type of storage/redundancy)."
-        #(Set-AzureRmRecoveryServicesBackupProperties  -Vault $RSVault -BackupStorageRedundancy $BackupStorageRedundancy -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-        #Write-LogFile -FilePath $LogFilePath -LogText "Backup properties (type of storage/redundancy) set to '$BackupStorageRedundancy' successfully."
-
         # 5. Set Vault context
         Write-LogFile -FilePath $LogFilePath -LogText "Setting-up vault context to '$RSVaultName'."
         ($RSVault | Set-AzureRmRecoveryServicesVaultContext -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
@@ -687,7 +673,6 @@ Process
         Exit
     }
 
-    # Update Policy run Schedule and Retention policy object 
     Try
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Check if Backup policy already exists '$VMBackupPolicyName'."
@@ -695,22 +680,16 @@ Process
 
         If($pol -eq $null)
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "No Policy exist with name '$VMBackupPolicyName. Creating new Policy object."
-            ($pol = New-AzureRmRecoveryServicesBackupProtectionPolicy -Name "$VMBackupPolicyName" -WorkloadType AzureVM -RetentionPolicy $retPol -SchedulePolicy $schPol -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-            Write-LogFile -FilePath $LogFilePath -LogText "New Backup policy created successfully."
+            $ObjOut = "Specified Backup policy object '$VMBackupPolicyName' does not exist."
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            Write-Output $output
+            Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+            Exit
         }
 
         # Updating Policy run Schedule and Retention policy object
         Try
         {
-            <#Write-LogFile -FilePath $LogFilePath -LogText "Creating Backup schedule policy object."
-            $schPol = $pol.SchedulePolicy
-            Write-LogFile -FilePath $LogFilePath -LogText "Backup schedule policy object created successfully."
-
-            Write-LogFile -FilePath $LogFilePath -LogText "Creating Backup retention policy object."
-            $retPol = $pol.RetentionPolicy
-            Write-LogFile -FilePath $LogFilePath -LogText "Backup retention policy object created successfully."#>
-
             Write-LogFile -FilePath $LogFilePath -LogText "Creating Backup schedule policy object."
             $schPol = Get-AzureRmRecoveryServicesBackupSchedulePolicyObject -WorkloadType AzureVM
             Write-LogFile -FilePath $LogFilePath -LogText "Backup schedule policy object created successfully."
