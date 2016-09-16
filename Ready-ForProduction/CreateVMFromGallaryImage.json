@@ -1,0 +1,215 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+	"parameters":
+	{
+		"adminUserName": 
+		{
+			"type": "string",
+			"metadata": {
+			"description": "User Name for the Virtual Machine"
+			}
+		},
+		"adminPassword": 
+		{
+			"type": "securestring",
+			"metadata": {
+			"description": "Password for the Virtual Machine"
+			}
+		},
+		"storageAccountName": 
+		{
+			"type": "string",
+			"metadata": { "description": "Storage Account Name" }
+		},
+		"vmSize": 
+		{
+			"type": "string",
+			"metadata": {
+			"description": "This is the size of your VM"
+			}
+		},
+		"vmName": 
+		{
+			"type": "string",
+			"defaultValue": "NewVM",
+			"minLength": 3,
+			"maxLength": 15,
+			"metadata": {
+			"description": "Name of the new VM deployed from the custom image."
+			}
+		},
+		"nicName":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "NIC Name for Virtual Machine"
+			}
+		},
+		"OSDiskName":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "OS disk name for the virtual machine"
+			}
+		},
+		"dnsNameForPublicIP":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "DNSName for the public IP"
+			}
+		},
+		"virtualNetworkName":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "Name of the Virtual Network Name to be used"
+			}
+		},
+		"subnetName":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "Name of the Subnet name to be used for the command"
+			}
+		},
+		"location":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "Name of the location to be used"
+			}
+		},
+		"availabilitySet":
+		{
+			"type":"string",
+			"metadata":{
+			"description": "Name of the availabiltySet to be used for the command"
+			}
+		},
+		"imagePublisher":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "Image Publisher name to be used"
+			}
+		},
+		"imageOffer":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "Image Offer name to be used"
+			}
+		},
+		"windowsOSVersion":
+		{
+			"type": "string",
+			"metadata": {
+			"description": "SKU name or Windows OS version to be used"
+			}
+		}
+	},
+    "variables": {
+	"publicIPAddressName":"[parameters('dnsNameForPublicIP')]",
+    "publicIPAddressType": "Dynamic",
+    "vmStorageAccountContainerName": "vhds",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]"
+  },
+  "resources": [
+    {
+		"apiVersion": "2016-03-30",
+		"type": "Microsoft.Network/publicIPAddresses",
+		"name": "[parameters('dnsNameForPublicIP')]",
+		"location": "[parameters('location')]",
+		"properties": {
+			"publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+			"dnsSettings": {
+			  "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+			}
+		}
+    },
+  	{
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[parameters('availabilitySet')]",
+      "apiVersion": "2015-06-15",
+      "location": "[parameters('location')]",
+      "properties": {
+        "platformFaultDomainCount": "3",
+        "platformUpdateDomainCount": "20"
+      }
+    },
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[parameters('nicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+              },
+              "subnet": {
+                
+				"id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')),'/subnets/',parameters('subnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+		"availabilitySet":{
+			"id":"[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySet'))]"
+		},
+        "osProfile": {
+          "computername": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[parameters('imagePublisher')]",
+            "offer": "[parameters('imageOffer')]",
+            "sku" : "[parameters('windowsOSVersion')]",
+            "version":"latest"
+          },
+          "osDisk" : {
+            "name": "osdisk",
+            "vhd": {
+              "uri": "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',parameters('OSDiskName'),'.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('nicName'))]"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
