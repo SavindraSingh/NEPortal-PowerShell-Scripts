@@ -23,7 +23,14 @@ Process
 {
     ForEach($File In $Files)
     {
-        (Get-Content -Path $File -Force).Replace($Find, $ReplaceWith) | Set-Content -Path $File -Force
+        If($CaseSensitive)
+        {
+            (Get-Content -Path $File -Force) -creplace $Find, $ReplaceWith | Set-Content -Path $File -Force
+        }
+        Else
+        {
+            (Get-Content -Path $File -Force) -replace $Find, $ReplaceWith | Set-Content -Path $File -Force
+        }
     }
 }
 
