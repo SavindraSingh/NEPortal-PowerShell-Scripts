@@ -72,7 +72,7 @@
 
     .NOTES
      Purpose of script: To Backup Azure IIS VM in ARM Portal
-     Minimum requirements: PowerShell Version 1.2.1
+     Minimum requirements: PowerShell Version 2.0.0
      Initially written by: SavindraSingh Shahoo
      Update/revision History:
      =======================

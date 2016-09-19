@@ -44,13 +44,14 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Create New Storage Account in Azure Resource Manager Portal
-     Minimum requirements: PowerShell Version 1.2.1
+     Purpose of script: The script is to associate a NSG to Subnet.
+     Minimum requirements: Azure PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================
-     Updated by    Date      Reason
-     ==========    ====      ======
+     Updated by        Date            Reason
+     ==========        ====            ======
+
 
     .EXAMPLE
     C:\PS> .\Attach-NSGToSubnet.ps1 -ClientID 123456 -AzureUserName 'testlab@netenrich.com' -AzurePassword 'pass12@word' -AzureSubscriptionID 'ae7c7576-f01c-4026-9b94-d05e04e459fc' -NSGGroup 'testGrp' -ResourceGroupName 'TestLabRG' -VNetName 'MyVnet' -SubnetName 'front-end'

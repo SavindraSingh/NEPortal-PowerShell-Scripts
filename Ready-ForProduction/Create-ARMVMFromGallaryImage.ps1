@@ -96,7 +96,7 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Create New Storage Account in Azure Resource Manager Portal
+     Purpose of script: The script is to create VM from Azure Image Gallary
      Minimum requirements: PowerShell Version 1.2.1
      Initially written by: Bhaskar Desharaju
      Update/revision History:

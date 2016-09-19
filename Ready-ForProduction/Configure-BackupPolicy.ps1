@@ -42,8 +42,8 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
-     Minimum requirements: PowerShell Version 1.2.1
+     Purpose of script: The script is to create a backup policy.
+     Minimum requirements: PowerShell Version 2.0.0
      Initially written by: SavindraSingh Shahoo
      Update/revision History:
      =======================

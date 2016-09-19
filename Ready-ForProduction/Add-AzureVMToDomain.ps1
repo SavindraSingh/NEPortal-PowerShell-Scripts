@@ -52,13 +52,14 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Create New Storage Account in Azure Resource Manager Portal
-     Minimum requirements: PowerShell Version 1.2.1
+     Purpose of script: This script is to add the existing Azure Virtual Machine to AD.
+     Minimum requirements: Azure PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================
-     Updated by    Date      Reason
-     ==========    ====      ======
+     Updated by        Date            Reason
+     ==========        ====            ======
+
 
     .EXAMPLE
     C:\PS> .\Add-AzureVMToDomain.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -VMName testImage123 -DomainName mylab.local -DomainUserName 'mylab.local\azure-admin' -DomainUserPassword 'password1234' -ResourceGroupName MyResourceGrp

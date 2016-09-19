@@ -88,8 +88,8 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Create New Storage Account in Azure Resource Manager Portal
-     Minimum requirements: PowerShell Version 1.2.1
+     Purpose of script: The script is to create VM from custom image
+     Minimum requirements: PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================
@@ -97,7 +97,7 @@
      ==========    ====      ======
 
     .EXAMPLE
-    C:\PS> .\Create-ARMVMFromGallary.ps1 -ClientID 123456 -AzureUserName 'testlab@netenrich.com' -AzurePassword 'pass12@word' -AzureSubscriptionID 'ae7c7576-f01c-4026-9b94-d05e04e459fc' -Location 'Central US' -VMName MyAzureVM -PublisherName MicrosoftWindowsServer -OfferName WindowsServer -SKUName 2012-R2-Datacenter -AdminUserName azure-admin -AdminPassword P@ssW0rd -VmSize Basic_A0 -StorageAccountName mystorage -VirtualNetworkname MyVnet -Subnet InfraSubnet -DNSNameForPublicIP MyPIP -ResourceGroupName 'TestLabRG' -DeploymentName 'SavindraTestFromPS' -TemplateJSONPath '.\JsonTemplates\StorageAccountTemplate.json' -ParameterJSONPath '.\JsonTemplates\StorageAccountParameters.json' -PerformanceTear 'Standard_LRS' -StorageAccountName 'JsnTmplStorAcPSTest' -WarningAction 'SilentlyContinue'
+    C:\PS> .\Create-ARMVMFromCustomImage.ps1 -ClientID 123456 -AzureUserName 'testlab@netenrich.com' -AzurePassword 'pass12@word' -AzureSubscriptionID 'ae7c7576-f01c-4026-9b94-d05e04e459fc' -Location 'Central US' -VMName MyAzureVM -PublisherName MicrosoftWindowsServer -OfferName WindowsServer -SKUName 2012-R2-Datacenter -AdminUserName azure-admin -AdminPassword P@ssW0rd -VmSize Basic_A0 -StorageAccountName mystorage -VirtualNetworkname MyVnet -Subnet InfraSubnet -DNSNameForPublicIP MyPIP -ResourceGroupName 'TestLabRG' -DeploymentName 'SavindraTestFromPS' -TemplateJSONPath '.\JsonTemplates\StorageAccountTemplate.json' -ParameterJSONPath '.\JsonTemplates\StorageAccountParameters.json' -PerformanceTear 'Standard_LRS' -StorageAccountName 'JsnTmplStorAcPSTest' -WarningAction 'SilentlyContinue'
 
     This will create a Virtual Machine based on the template and parameter JSON files available at the given path.
     .LINK

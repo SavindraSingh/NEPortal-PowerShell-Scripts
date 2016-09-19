@@ -54,8 +54,8 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
-     Minimum requirements: Azure PowerShell Version 1.4.0
+     Purpose of script:     The script is to create Firewalls rules on a Azure Virtual Machine.
+     Minimum requirements: Azure PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================
@@ -67,6 +67,12 @@
      SavindraSingh     26-Jul-16       1. Added flag for indicating log file readyness for uploading to blob in the log text.
                                        2. Added Function Get-BlobURIForLogFile to return the URI for Log file blob in output.
                                        3. Added Common parameter $ClientID to indicate the Client details in the logfile.
+    SavindraSingh      9-Sep-2016      1. Added a variable at script level (line 89) - $ScriptUploadConfig = $null
+                                       2. $Script:ScriptUploadConfig will now hold the value for the current required version
+                                          of Azure PowerShell. Which is used at line 176 with - If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
+                                          to check if we have Azure PowerShell version available.
+                                       3. The required version of Azure PowerShell should now be mentioned in the NEPortalApp.Config as given below:
+                                          Under <appSettings> tag - <add key="RequiredPSVersion" value="2.0.1"/>
 
     .EXAMPLE
     C:\PS> .\Create-Firewallrules.ps1 -ClientID 123456 AzureUserName bhaskar.desharaju@netenrich.com AzurePassword ****** AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d ResourceGroupName testgrp Location 'southeast asia' VMName testvm-bhaskar ScriptAction New FirewallAction Allow FlowDirection Inbound LocalPort 80 RemotePort 80 Protocol tcp FirewallProfile Public

@@ -33,7 +33,7 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
+     Purpose of script: The script is to create the Azure REcovery Service Vault
      Minimum requirements: PowerShell Version 1.2.1
      Initially written by: SavindraSingh Shahoo
      Update/revision History:

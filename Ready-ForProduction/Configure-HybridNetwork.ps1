@@ -104,8 +104,8 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
-     Minimum requirements: Azure PowerShell Version 1.4.0
+     Purpose of script: The script is to create Hybrid Network
+     Minimum requirements: Azure PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================

@@ -124,8 +124,8 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
-     Minimum requirements: Azure PowerShell Version 1.4.0
+     Purpose of script:     The script is to create and configure Load balancing rules.
+     Minimum requirements: Azure PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================
@@ -134,6 +134,15 @@
      SavindraSingh     26-May-16       Changed Mandatory=$True to Mandatory=$False for all parameters.
      SavindraSingh     21-Jul-16       1. Added Login function in Begin block, instead of commands in Process block.
                                        2. Check minumum required version of Azure PowerShell
+     SavindraSingh     26-Jul-16       1. Added flag for indicating log file readyness for uploading to blob in the log text.
+                                       2. Added Function Get-BlobURIForLogFile to return the URI for Log file blob in output.
+                                       3. Added Common parameter $ClientID to indicate the Client details in the logfile.
+    SavindraSingh      9-Sep-2016      1. Added a variable at script level (line 89) - $ScriptUploadConfig = $null
+                                       2. $Script:ScriptUploadConfig will now hold the value for the current required version
+                                          of Azure PowerShell. Which is used at line 176 with - If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
+                                          to check if we have Azure PowerShell version available.
+                                       3. The required version of Azure PowerShell should now be mentioned in the NEPortalApp.Config as given below:
+                                          Under <appSettings> tag - <add key="RequiredPSVersion" value="2.0.1"/>
 
     .EXAMPLE
         C:\PS>.\Configure-LoadBalancerNATRules.ps1 -ClientID 12345 -AzureUserName bhaskar@netenrich.com -AzurePassword ***** -AzureSubscriptionID ca68598c-ecc3-4abc-b7a2-1ecef33f278d -Location 'Southeast Asia' -ResourceGroupName 'testgrp' -LoadBalancerName TestLB LoadBalancerType Internal -VirtualNetworkName testvnet -SubnetName infrasubnet -IPAddressType Static -StaticIPAddress 10.0.0.8 -ProbeName LBProbe -ProbeProtocol http -ProbePort 80 -ProbePath /index.html -ProbeInterval 5 -ProbeUnhealthythreshold 2 -BackEndPoolName testbackpool -InboundNATRuleName InRule -InboundProtocol tcp -InboundPort 80 -InboundBackEndPort 80 -LoadBalancerRuleName LBrule -LoadBalancingProtocol tcp -LoadBalancingPort 80 -BackEndPort 80

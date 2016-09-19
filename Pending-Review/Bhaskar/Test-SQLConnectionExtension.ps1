@@ -1,49 +1,39 @@
-﻿<##
+<##
     .SYNOPSIS
-    Script to Add the Virtual Machine to the Given domain.
+    The Script is to check the pre requisites on Windows Server for installing the MABS.
 
     .DESCRIPTION
-    Script to Add the Virtual Machine to the Given domain.
+    The Script is to check the pre requisites on Windows Server for installing the MABS.
 
     .PARAMETER ClientID
-
     Client ID to be used for this script.
 
     .PARAMETER AzureUserName
-
     User name for Azure login. This should be an Organizational account (not Hotmail/Outlook account)
 
     .PARAMETER AzurePassword
-
     Password for Azure user account.
 
     .PARAMETER AzureSubscriptionID
-
     Azure Subscription ID to use for this activity.
 
     .PARAMETER ResourceGroupName
-
     Name of the Resource Group name to be used for this command.
 
     .PARAMETER Location
-
     Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
 
     .PARAMETER VMName
+    Azure virtual Machine On which the MARS Agent will be installed.
 
-    Azure virtual Machine which will be joined to domain.
+    .PARAMETER SQLServerIPorName
+    Azure virtual Machine On which the MARS Agent will be installed.
 
-    .PARAMETER DomainName
+    .PARAMETER SQLUserName
+    Azure virtual Machine On which the MARS Agent will be installed.
 
-    Name of the domain to be used for this command.i.e mylab.local
-
-    .PARAMETER DomainUserName
-
-    Name of the domain user to be used for this command. e.g mylab.local\azure-admin
-    
-    .PARAMETER DomainUserPassword
-
-    Password of the domain user to be used for this command.
+    .PARAMETER SQLPassword
+    Azure virtual Machine On which the MARS Agent will be installed.
 
     .INPUTS
     All parameter values in String format.
@@ -52,7 +42,7 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: This script is to add the existing Azure Virtual Machine to AD.
+     Purpose of script: Testing the SQL connection from Azure VM.
      Minimum requirements: Azure PowerShell Version 2.0.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
@@ -73,7 +63,7 @@
                                           Under <appSettings> tag - <add key="RequiredPSVersion" value="2.0.1"/>
 
     .EXAMPLE
-    C:\PS> .\Add-AzureVMToDomain.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -VMName testImage123 -DomainName mylab.local -DomainUserName 'mylab.local\azure-admin' -DomainUserPassword 'password1234' -ResourceGroupName MyResourceGrp
+    C:\PS> .\Test-SQLConnectionExtension.ps1 -ClientID 123456 -AzureUserName bhaskar@netenrich.com -AzurePassword Passw0rd1 -ResourceGroupName testgrp -Location 'East Asia' -VMName testvm' -SQLServerIPorName SQLServer -SQLUserName sa -SQLPassword Admin098
 
     .LINK
     http://www.netenrich.com/
@@ -103,13 +93,13 @@ Param
     [string]$VMName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$DomainName,
+    [string]$SQLServerIPorName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$DomainUserName,
+    [string]$SQLUserName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [String]$DomainUserPassword
+    [string]$SQLPassword
 )
 
 Begin
@@ -266,73 +256,6 @@ Begin
                 Exit
             }
 
-            # Validate parameter: VMName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($VMName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. VMName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-            # Validate parameter: DomainName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DomainName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($DomainName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. DomainName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-			# Validate parameter: DomainUserName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DomainUserName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($DomainUserName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUserName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. DomainUserName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-            else
-            {
-                If($DomainUserName -contains "\")
-                {
-                    $dname = $DomainUserName.Split("\")[0]
-                    If($dname -ne $DomainName)
-                    {
-                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUsername parameter value must be in the format of DomainName\username .`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "Validation failed. DomainUsername parameter value must be in the format of DomainName\username ."
-                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                        Write-Output $output
-                        Exit
-                    }
-                }
-                Else
-                {
-                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUsername parameter value must be in the format of DomainName\username .`r`n<#BlobFileReadyForUpload#>"
-                     $ObjOut = "Validation failed. DomainUsername parameter value must be in the format of DomainName\username ."
-                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                     Write-Output $output
-                     Exit
-                }
-            }
-
-            # Validate parameter: DomainUserPassword
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DomainUserPassword. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($DomainUserPassword))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUserPassword parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. DomainUserPassword parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
             # Validate parameter: ResourceGroupName
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: ResourceGroupName. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($ResourceGroupName))
@@ -350,6 +273,50 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Location parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. Location parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: VMName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($VMName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. VMName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: SQLServerIPorName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLServerIPorName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($SQLServerIPorName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLServerIPorName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. SQLServerIPorName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: SQLUserName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLUserName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($SQLUserName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLUserName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. SQLUserName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: SQLPassword
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLPassword. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($SQLPassword))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLPassword parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. SQLPassword parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -394,47 +361,7 @@ Process
 
     Login-ToAzureAccount
 
-    # 3. Registering Azure Provider Namespaces
-    Try
-    {
-        Write-LogFile -FilePath $LogFilePath -LogText "Registering the Azure resource providers." 
-
-        # Required Provider name spaces as of now
-        $ReqNameSpces = @("Microsoft.Compute","Microsoft.Storage","Microsoft.Network")
-        foreach($NameSpace in $ReqNameSpces)
-        {
-            Write-LogFile -FilePath $LogFilePath -LogText "Registering the provider $NameSpace" 
-            ($Status = Register-AzureRmResourceProvider -ProviderNamespace $NameSpace -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-            If($Status)
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Verifying the provider $NameSpace Registration."
-                ($state = Get-AzureRmResourceProvider -ProviderNamespace $NameSpace -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
-                while($state.RegistrationState -ne 'Registered')
-                {
-                    ($state = Get-AzureRmResourceProvider -ProviderNamespace $NameSpace -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null 
-                }
-                Write-LogFile -FilePath $LogFilePath -LogText "Registering the provider $NameSpace is successful." 
-            }
-            else
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Registering the provider $NameSpace was not successful.`r`n<#BlobFileReadyForUpload#>" 
-                $ObjOut = "Registering the provider $NameSpace was not successful."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-        }
-    }
-    catch
-    {
-        $ObjOut = "Error while registering the Resource provide namespace.$($Error[0].Exception.Message)"
-        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-        Write-Output $output
-        Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
-        Exit
-    }
-
-    # 4. Checking for the reosurce group existence
+    # 3. Checking for the reosurce group existence
     Try
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
@@ -462,7 +389,7 @@ Process
         Exit
     }
 
-    # 3. Checking for the VM existence
+    # 4. Checking for the VM existence
     Try
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Verifying the VM existence in the subscription." 
@@ -470,7 +397,7 @@ Process
         ($VMExist = Get-AzureRMVM -ResourceGroupName $ResourceGroupName -Name $VMName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($VMExist)
         {
-        Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine is already exist."
+            Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine is already exist."
             ($VMStatus = Get-AzureRMVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
             $state = $VMStatus.Statuses | Where-Object {$_.DisplayStatus -eq "VM Running"}
             if($state.code -eq 'PowerState/running')
@@ -504,57 +431,70 @@ Process
         Exit
     }
 
-    # 4. Add Azure VM to the existing domain
+    # 5. Checking for the SQL Connectvity from Any Azure VM
     Try
     {
-        Write-LogFile -FilePath $LogFilePath -LogText "Creating the settings with domain details and adding the VM to domain."
-
-        $DomainString = @{ "Name" = $DomainName; "OUPath" = ""; "User" = $DomainUserName; "Restart" = "true"; "Options" = 3}
-        $PasswordString = @{"password" = $DomainUserPassword}
-
-        Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing AD extensions."
-        $extensions = $VMExist.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'JsonADDomainExtension'}
+        Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
+        $extensions = $VMExist.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
         if($extensions)
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Removing the existing AD extensions."
+            Write-LogFile -FilePath $LogFilePath -LogText "Removing the existing CustomScript extensions."
             ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($RemoveState.StatusCode -eq 'OK')
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing AS extension and adding new handle for JoinDomain."
-                $ExtensionName = $VMName + "_JoinAD"
+                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing CustomScript extension and adding new handle."
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing VM AD extensions.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Unable to remove the existing VM AD extensions."
+                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing CustomScript extensions.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Unable to remove the existing CustomScript extensions."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
         }
 
-        $ExtensionName = $VMName + "_JoinAD"
-        ($status = Set-AzureRmVMExtension -Publisher "Microsoft.Compute" -ExtensionType "JsonADDomainExtension" -Settings $DomainString -ProtectedSettings $PasswordString -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $ExtensionName -TypeHandlerVersion "1.0" -Location $($ResourceGroup.Location) -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-        if($status.StatusCode -eq 'OK')
+        $ExtensionName = "SQLConnectCheck"
+        Write-LogFile -FilePath $LogFilePath -LogText "Trying to set the extension for SQL Connectivity on VM"
+
+        ($PreReqCheckExtension = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/Test-SQLServerConnectivityCS.ps1" -Run Test-SQLServerConnectivityCS.ps1 -Argument "$SQLServerIPorName $SQLUserName $SQLPassword" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+
+        if($PreReqCheckExtension.StatusCode -eq 'OK')
         {
-            ($JsonStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
-            if($JsonStatus -ne $null)
+            ($InstallationStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+            if($InstallationStatus -ne $null)
             {
-                while($JsonStatus.ProvisioningState -notin ('Succeeded','Failed'))
+                while($InstallationStatus.ProvisioningState -notin ('Succeeded','Failed'))
                 {
-                    ($JsonStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+                    ($InstallationStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
                 }
-                if($JsonStatus.Statuses.Code -eq 'ProvisioningState/succeeded')
+
+                ($ScriptStatus = Get-AzureRMVM -Name $VMName -ResourceGroupName $ResourceGroupName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+                $ExtScriptStatus = $ScriptStatus.Extensions | Where-Object {$_.Name -eq $ExtensionName}
+                if(($ExtScriptStatus.Statuses.Code -eq 'ProvisioningState/succeeded'))
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine $VMName has been joined to the $DomainName succesfully.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Virtual Machine $VMName has been joined to the $DomainName succesfully."
-                    $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                    Write-Output $output
+                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}).Message
+                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdErr'}).Message
+                    if(($message2 -eq $null))
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "SQL Connection has been tested from $VMName and State is : $message1."
+                        $ObjOut = "SQL Connection has been tested from $VMName and State is : $message1."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                    }
+                    Else 
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "SQL Connection test Failed from $VMName.$message2`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "SQL Connection test Failed from $VMName.$message2"
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit                        
+                    }
                 }
                 else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine $VMName has not been joined to the $DomainName succesfully.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Virtual Machine $VMName has not been joined to the $DomainName succesfully."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Provisioning the script for SQL Connectivity check from $VMName was failed.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Provisioning the script for SQL Connectivity check from $VMName was failed."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -562,39 +502,39 @@ Process
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "The Domain Join extension enablement has failed.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "The Domain Join extension enablement has failed."
+                Write-LogFile -FilePath $LogFilePath -LogText "The extension was not installed for SQL Connectivity check from $VMName`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "The extension was not installed for SQL Connectivity check from $VMName"
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
-            }
+            }           
         }
-        else
+        Else
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Setting the domain join extension has not been succeeded.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Setting the domain join extension has not been succeeded."
+            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension for SQL Connectivity check from $VMName`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Unable to install the custom script extension for SQL Connectivity check from $VMName"
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
-            Exit
+            Exit            
         }
     }
     catch
     {
-        $ObjOut = "Error while adding $VMName to the given domain.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while setting the script for SQL Connectivity check from $VMName.$($Error[0].Exception.Message)"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
     }
 
-    # 5. Custom script Cleanup activity to avoid script rerun on Virtual Machine restarts
+    # 7. Custom script Cleanup activity to avoid script rerun on Virtual Machine restarts
     Try 
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
         ($VMObjExtension = Get-AzureRmVm -Name $VMName -ResourcegroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($VMObjExtension -ne $null)
         {
-            $extensions = $VMObjExtension.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'JsonADDomainExtension'}
+            $extensions = $VMObjExtension.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
             if($extensions)
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Removing the existing CustomScript extensions."
@@ -606,7 +546,7 @@ Process
                 else
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing extensions.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Unable to remove the existing extensions."
+					$ObjOut = "Unable to remove the existing extensions."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 }
             }

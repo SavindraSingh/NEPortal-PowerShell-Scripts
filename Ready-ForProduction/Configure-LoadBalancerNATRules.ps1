@@ -124,7 +124,7 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
+     Purpose of script: The script is to create load balancer and NATing rules
      Minimum requirements: Azure PowerShell Version 1.4.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:

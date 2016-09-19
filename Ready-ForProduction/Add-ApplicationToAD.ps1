@@ -36,19 +36,14 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Template for Azure Scripts
+     Purpose of script: To add an application to AD
      Minimum requirements: Azure PowerShell Version 1.4.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
      =======================
      Updated by        Date            Reason
      ==========        ====            ======
-     SavindraSingh     26-May-16       Changed Mandatory=$True to Mandatory=$False for all parameters.
-     SavindraSingh     21-Jul-16       1. Added Login function in Begin block, instead of commands in Process block.
-                                       2. Check minumum required version of Azure PowerShell
-     SavindraSingh     26-Jul-16       1. Added flag for indicating log file readyness for uploading to blob in the log text.
-                                       2. Added Function Get-BlobURIForLogFile to return the URI for Log file blob in output.
-                                       3. Added Common parameter $ClientID to indicate the Client details in the logfile.
+
 
     .EXAMPLE
     C:\PS> .\Add-ApplicationToAD.ps1 -ClientID 12345 -AzureUserNamer bhaskar@netenrich.com -AzurePassword Passw0rd1 -AzureSubscriptID ca68598c-ecc3-4abc-b7a2-1ecef33f278d
