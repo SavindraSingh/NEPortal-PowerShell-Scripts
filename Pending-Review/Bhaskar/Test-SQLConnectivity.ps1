@@ -9,13 +9,16 @@
     ClientID of the client for whom the script is being executed.
 
     .PARAMETER SQLServerIPorName
-    User name for Azure login. This should be an Organizational account (not Hotmail/Outlook account)
+    Name or IP of the SQL server
+
+    .PARAMETER SQLServerPort
+    Port to access the SQL Server Instance
 
     .PARAMETER SQLUserName
-    Password for Azure user account.
+    UserName to login into SQL Server
 
     .PARAMETER SQLPassword
-    Azure Subscription ID to use for this activity.
+    Password of the SQL Server user
 
     .INPUTS
     All parameter values in String format.
@@ -61,6 +64,9 @@ Param
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SQLServerIPorName,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$SQLServerPort,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SQLUserName,
@@ -264,8 +270,13 @@ Process
 
     Try 
     {
+        if([string]::IsNullOrEmpty($SQLServerPort))
+        {
+            $SQLServerPort = 1433 
+        }
+        
         $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-        $SqlConnection.ConnectionString = (“Data Source=$SQLServerIPorName;Integrated Security=False;User ID=$SQLUserName;Password=$SQLPassword”)
+        $SqlConnection.ConnectionString = "Data Source="+$SQLServerIPorName+","+$SQLServerPort+";Integrated Security=False;User ID="+$SQLUserName+";Password="+$SQLPassword
         $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
         $SqlConnection.Open()
 
