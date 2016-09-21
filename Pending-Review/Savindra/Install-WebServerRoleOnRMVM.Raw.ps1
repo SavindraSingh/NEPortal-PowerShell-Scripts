@@ -370,10 +370,10 @@ Process
         Exit
     }
 
-    # 4. Install the File Server role and configure File Server.
+    # 4. Install the Web Server role and configure Web Server.
     Try
     {
-        Write-LogFile -FilePath $LogFilePath -LogText "Installing the File Server role and configure File Server."
+        Write-LogFile -FilePath $LogFilePath -LogText "Installing the Web Server role and configure Web Server."
 
         Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
         $extensions = $VMExist.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
@@ -383,8 +383,7 @@ Process
             ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($RemoveState.StatusCode -eq 'OK')
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle for Installing File Server Role."
-                $ExtensionName = $VMName + "_InstallFSRole"
+                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle for Installing Web Server Role."
             }
             else
             {
@@ -396,12 +395,12 @@ Process
             }
         }
 
-        $ExtensionName = "InstallFSRole"
-        Write-LogFile -FilePath $LogFilePath -LogText "Trying to Set the Extension for File Server Role Installation."
+        $ExtensionName = $VMName + "_InstallWebServerRole"
+        Write-LogFile -FilePath $LogFilePath -LogText "Trying to Set the Extension for Web Server Role Installation."
 
-        ($ADInstallExtensionStatus = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/InstallAD-Windows2012.ps1" -Run InstallAD-Windows2012.ps1 -Argument "$DomainName $PasswordForDomainAdmin $DomainBiosName $DomainMode" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        ($IIS_InstallExtensionStatus = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/CSEInstall-WebServerRole.ps1" -Run 'CSEInstall-WebServerRole.ps1' -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
 
-        if($ADInstallExtensionStatus.StatusCode -eq 'OK')
+        if($IIS_InstallExtensionStatus.StatusCode -eq 'OK')
         {
             ($InstallationStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
             if($InstallationStatus -ne $null)
@@ -412,15 +411,15 @@ Process
                 }
                 if($InstallationStatus.Statuses.Code -eq 'ProvisioningState/succeeded')
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "AD DS and Configuration has been installed successfully $VMName."
-                    $ObjOut = "AD DS and Configuration has been installed successfully $VMName."
+                    Write-LogFile -FilePath $LogFilePath -LogText "IIS Role installation has been installed successfully $VMName."
+                    $ObjOut = "IIS Role installation has been installed successfully $VMName."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                 }
                 else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "AD DS and Configuration has not been installed successfully $VMName.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "AD DS and Configuration has not been installed successfully $VMName."
+                    Write-LogFile -FilePath $LogFilePath -LogText "IIS Role installation has not been installed successfully $VMName.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "IIS Role installation has not been installed successfully $VMName."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -428,8 +427,8 @@ Process
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "The CustomScript extension enablement for For AD Installtion has failed.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "The CustomScript extension enablement for Firewall has failed."
+                Write-LogFile -FilePath $LogFilePath -LogText "The CustomScript extension enablement for For IIS Installtion has failed.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "The CustomScript extension enablement for IIS Role Installation has failed."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -437,8 +436,8 @@ Process
         }
         Else
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension For AD Installtion for Virtual Machine.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Unable to install the custom script extension For AD Installtion for Virtual Machine."
+            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension For IIS installation for Virtual Machine.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Unable to install the custom script extension For IIS installation for Virtual Machine."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit            
@@ -446,7 +445,7 @@ Process
     }
     catch
     {
-        $ObjOut = "Error while adding Installing the AD Roles on $VMName virtual Machine.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while adding Installing the IIS Role on $VMName virtual Machine.$($Error[0].Exception.Message)"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
