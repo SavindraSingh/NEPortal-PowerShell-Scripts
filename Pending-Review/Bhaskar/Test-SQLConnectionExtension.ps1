@@ -24,16 +24,19 @@
     Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
 
     .PARAMETER VMName
-    Azure virtual Machine On which the MARS Agent will be installed.
+    Azure virtual Machine from which the connection to SQL access has to be tested
 
     .PARAMETER SQLServerIPorName
-    Azure virtual Machine On which the MARS Agent will be installed.
+    SQL Server Name for which the connection has to be tested from the given VMName
+
+    .PARAMETER SQLServerPort
+    SQL Server instance Port
 
     .PARAMETER SQLUserName
-    Azure virtual Machine On which the MARS Agent will be installed.
+    SQL Login userName
 
     .PARAMETER SQLPassword
-    Azure virtual Machine On which the MARS Agent will be installed.
+    SQl Server login user password
 
     .INPUTS
     All parameter values in String format.
@@ -94,6 +97,9 @@ Param
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SQLServerIPorName,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$SQLServerPort,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SQLUserName,
@@ -434,6 +440,11 @@ Process
     # 5. Checking for the SQL Connectvity from Any Azure VM
     Try
     {
+        if([string]::IsNullOrEmpty($SQLServerPort))
+        {
+            $SQLServerPort = 1433 
+        }
+
         Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
         $extensions = $VMExist.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
         if($extensions)
@@ -457,7 +468,7 @@ Process
         $ExtensionName = "SQLConnectCheck"
         Write-LogFile -FilePath $LogFilePath -LogText "Trying to set the extension for SQL Connectivity on VM"
 
-        ($PreReqCheckExtension = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/Test-SQLServerConnectivityCS.ps1" -Run Test-SQLServerConnectivityCS.ps1 -Argument "$SQLServerIPorName $SQLUserName $SQLPassword" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        ($PreReqCheckExtension = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/Test-SQLServerConnectivityCS.ps1" -Run Test-SQLServerConnectivityCS.ps1 -Argument "$SQLServerIPorName $SQLServerPort $SQLUserName $SQLPassword" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
 
         if($PreReqCheckExtension.StatusCode -eq 'OK')
         {

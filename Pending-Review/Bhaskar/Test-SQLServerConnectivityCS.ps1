@@ -1,13 +1,14 @@
 # Custom script for testing the SQL Connection from Azure VM
 $SQLServerName = $args[0]
-$SQLUserName = $args[1]
-$SQLPassword = $args[2]
+$SQLServerPort = $args[1]
+$SQLUserName = $args[2]
+$SQLPassword = $args[3]
 
 # checking the SQL Connection
 Try 
 {
     $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-    $SqlConnection.ConnectionString = (“Data Source=$SQLServerName;Integrated Security=False;User ID=$SQLUserName;Password=$SQLPassword”)
+    $SqlConnection.ConnectionString = "Data Source="+$SQLServerName+","+$SQLServerPort+";Integrated Security=False;User ID="+$SQLUserName+";Password="+$SQLPassword
     $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
     $SqlConnection.Open()
 
