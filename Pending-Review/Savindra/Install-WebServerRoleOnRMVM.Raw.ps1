@@ -72,9 +72,10 @@ Param
     [string]$Location,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [String]$ResourceGroupName
+    [String]$ResourceGroupName,
 
-    # Add other parameters as required
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [String]$VMName
 )
 
 Begin
@@ -252,6 +253,17 @@ Begin
                 Write-Output $output
                 Exit
             }
+
+            # Validate parameter: VMName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($VMName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. VMName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
         }
         Catch
         {
@@ -398,7 +410,7 @@ Process
         $ExtensionName = $VMName + "_InstallWebServerRole"
         Write-LogFile -FilePath $LogFilePath -LogText "Trying to Set the Extension for Web Server Role Installation."
 
-        ($IIS_InstallExtensionStatus = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/CSEInstall-WebServerRole.ps1" -Run 'CSEInstall-WebServerRole.ps1' -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        ($IIS_InstallExtensionStatus = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/CSEInstall-WebServerRole.ps1" -Run 'CSEInstall-WebServerRole.ps1' -ResourceGroupName $ResourceGroupName -Location $Location ` -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
 
         if($IIS_InstallExtensionStatus.StatusCode -eq 'OK')
         {
@@ -445,7 +457,7 @@ Process
     }
     catch
     {
-        $ObjOut = "Error while adding Installing the IIS Role on $VMName virtual Machine.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while adding Installing the IIS Role on $VMName virtual Machine.$($Error[0].Exception.Message)`r`nLine: $($Error[0].InvocationInfo.ScriptLineNumber) Char: $($Error[0].InvocationInfo.OffsetInLine)"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
