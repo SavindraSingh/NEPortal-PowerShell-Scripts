@@ -432,8 +432,8 @@ Process
                 }
                 else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "IIS Role installation could NOT complete for $VMName. Status code: $($InstallationStatus.Statuses.Code)`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "IIS Role installation could NOT complete for $VMName. Status code: $($InstallationStatus.Statuses.Code)"
+                    Write-LogFile -FilePath $LogFilePath -LogText "IIS Role installation could NOT complete for - $VMName. Status code: $($InstallationStatus.Statuses.Code)`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "IIS Role installation could NOT complete for - $VMName. Status code: $($InstallationStatus.Statuses.Code)"
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
