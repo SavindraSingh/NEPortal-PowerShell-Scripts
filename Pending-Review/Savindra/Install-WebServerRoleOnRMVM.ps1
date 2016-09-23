@@ -465,6 +465,30 @@ Process
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
     }
+
+    # Remove custom script extension that we have Added
+    try
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Removing custom script extensions after successful installation."
+        $extensions = $VMExist.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
+        if($extensions)
+        {
+            Write-LogFile -FilePath $LogFilePath -LogText "Removal of CustomScript extensions started."
+            ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+            if($RemoveState.StatusCode -eq 'OK')
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed custom script extension for Installing Web Server Role."
+            }
+            else
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove Custom script extensions. But Installation for IIS was successful."
+            }
+        }
+    }
+    catch
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove Custom script extensions.`r`n$($Error[0].Exception.Message)"
+    }
 }
 End
 {
