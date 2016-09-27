@@ -8,17 +8,8 @@
     .PARAMETER ClientID
     ClientID of the client for whom the script is being executed.
 
-    .PARAMETER SQLServerIPorName
-    Name or IP of the SQL server
-
-    .PARAMETER SQLServerPort
-    Port to access the SQL Server Instance
-
-    .PARAMETER SQLUserName
-    UserName to login into SQL Server
-
-    .PARAMETER SQLPassword
-    Password of the SQL Server user
+    .PARAMETER DefaultWebSiteUrl
+    User name for Azure login. This should be an Organizational account (not Hotmail/Outlook account)
 
     .INPUTS
     All parameter values in String format.
@@ -27,7 +18,7 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Script is to test the SQL Connection
+     Purpose of script: Script is to test the default website access
      Minimum requirements: Azure PowerShell Version 1.4.0
      Initially written by: Bhaskar Desharaju
      Update/revision History:
@@ -48,7 +39,7 @@
                                           Under <appSettings> tag - <add key="RequiredPSVersion" value="2.0.1"/>
 
     .EXAMPLE
-    C:\PS> .\Test-SQLConnectivity.ps1 -ClientID 12345 -SQLServerIPorName SQLserver -SQLUserName sa -SQLPassword Admin098
+    C:\PS> 
 
     .EXAMPLE
     C:\PS> 
@@ -63,20 +54,13 @@ Param
     [string]$ClientID,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerIPorName,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerPort,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLUserName,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLPassword
+    [string]$DefaultWebSiteUrl
 )
 
 Begin
 {
+    $OldProgressPreference = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
     # Name the Log file based on script name
     [DateTime]$LogFileTime = Get-Date
     $FileTimeStamp = $LogFileTime.ToString("dd-MMM-yyyy_HHmmss")
@@ -197,34 +181,12 @@ Begin
                 Exit
             }
 
-            # Validate parameter: SQLServerIPorName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLServerIPorName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLServerIPorName))
+            # Validate parameter: DefaultWebSiteUrl
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DefaultWebSiteUrl. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($DefaultWebSiteUrl))
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLServerIPorName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLServerIPorName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-            # Validate parameter: SQLUserName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLUserName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLUserName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLUserName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLUserName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-            # Validate parameter: SQLPassword
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLPassword. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLPassword))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLPassword parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLPassword parameter value is empty."
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DefaultWebSiteUrl parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. DefaultWebSiteUrl parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -263,46 +225,40 @@ Begin
 
 Process
 {
-    # 1. Validate parameters
+    # 1. Validate All parameters
     Validate-AllParameters
 
-    # 2. Test the SQL Server Connection
-
+    # 2. Testing the Website access
     Try 
     {
-        if([string]::IsNullOrEmpty($SQLServerPort))
+        ($StatusCheck = Invoke-WebRequest -Uri $DefaultWebSiteUrl -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        if($StatusCheck.StatusCode -eq 200)
         {
-            $SQLServerPort = 1433 
-        }
-        
-        $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-        $SqlConnection.ConnectionString = "Data Source="+$SQLServerIPorName+","+$SQLServerPort+";Integrated Security=False;User ID="+$SQLUserName+";Password="+$SQLPassword
-        $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-        $SqlConnection.Open()
-
-        if($SqlConnection.State -eq 'Open')
-        {
-            Write-LogFile -FilePath $LogFilePath -LogText "Connection test is successful"
-            $ObjOut = "Connection test is successful."
+            Write-LogFile -FilePath $LogFilePath -LogText "Website $DefaultWebSiteUrl test is successful and the Status is: $($StatusCheck.StatusDescription)"
+            $ObjOut = "Website $DefaultWebSiteUrl test is successful and the Status is: $($StatusCheck.StatusDescription)"
             $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-            Write-Output $output
-            $SqlConnection.Open()
+            Write-Output $output            
         }
         Else 
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Connection test is failed."
-            $ObjOut = "Connection test is failed."
+            Write-LogFile -FilePath $LogFilePath -LogText "Website $DefaultWebSiteUrl is not accessible and Status is: $($StatusCheck.StatusDescription)"
+            $ObjOut = "Website $DefaultWebSiteUrl is not accessible and Status is: $($StatusCheck.StatusDescription)"
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
+            exit
         }
     }
-    Catch
+    Catch 
     {
-        $ObjOut = "Error while checking the SQL Connectivity.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while checking the access to website $DefaultWebSiteUrl.$($Error[0].Exception.Message)"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
+    }
+    Finally
+    {
+        $ProgressPreference = $OldProgressPreference
     }
 }
 End

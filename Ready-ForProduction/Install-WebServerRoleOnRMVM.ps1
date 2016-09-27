@@ -1,12 +1,12 @@
-<##
+﻿<#
     .SYNOPSIS
-    The Script is to check the pre requisites on Windows Server for installing the MABS.
+    Script to create <ResourceName/Type> in Azure Resource Manager Portal
 
     .DESCRIPTION
-    The Script is to check the pre requisites on Windows Server for installing the MABS.
+    Script to create <ResourceName/Type> in Azure Resource Manager Portal
 
     .PARAMETER ClientID
-    Client ID to be used for this script.
+    ClientID of the client for whom the script is being executed.
 
     .PARAMETER AzureUserName
     User name for Azure login. This should be an Organizational account (not Hotmail/Outlook account)
@@ -17,26 +17,11 @@
     .PARAMETER AzureSubscriptionID
     Azure Subscription ID to use for this activity.
 
-    .PARAMETER ResourceGroupName
-    Name of the Resource Group name to be used for this command.
-
     .PARAMETER Location
     Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
 
-    .PARAMETER VMName
-    Azure virtual Machine from which the connection to SQL access has to be tested
-
-    .PARAMETER SQLServerIPorName
-    SQL Server Name for which the connection has to be tested from the given VMName
-
-    .PARAMETER SQLServerPort
-    SQL Server instance Port
-
-    .PARAMETER SQLUserName
-    SQL Login userName
-
-    .PARAMETER SQLPassword
-    SQl Server login user password
+    .PARAMETER ResourceGroupName
+    Name of the Azure ARM resource group to use for this command.
 
     .INPUTS
     All parameter values in String format.
@@ -45,9 +30,9 @@
     String. Result of the command output.
 
     .NOTES
-     Purpose of script: Testing the SQL connection from Azure VM.
-     Minimum requirements: Azure PowerShell Version 2.0.0
-     Initially written by: Bhaskar Desharaju
+     Purpose of script: Template for Azure Scripts
+     Minimum requirements: Azure PowerShell Version 1.4.0
+     Initially written by: SavindraSingh Shahoo
      Update/revision History:
      =======================
      Updated by        Date            Reason
@@ -58,19 +43,16 @@
      SavindraSingh     26-Jul-16       1. Added flag for indicating log file readyness for uploading to blob in the log text.
                                        2. Added Function Get-BlobURIForLogFile to return the URI for Log file blob in output.
                                        3. Added Common parameter $ClientID to indicate the Client details in the logfile.
-    SavindraSingh      9-Sep-2016      1. Added a variable at script level (line 89) - $ScriptUploadConfig = $null
-                                       2. $Script:ScriptUploadConfig will now hold the value for the current required version
-                                          of Azure PowerShell. Which is used at line 176 with - If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
-                                          to check if we have Azure PowerShell version available.
-                                       3. The required version of Azure PowerShell should now be mentioned in the NEPortalApp.Config as given below:
-                                          Under <appSettings> tag - <add key="RequiredPSVersion" value="2.0.1"/>
 
     .EXAMPLE
-    C:\PS> .\Test-SQLConnectionExtension.ps1 -ClientID 123456 -AzureUserName bhaskar@netenrich.com -AzurePassword Passw0rd1 -ResourceGroupName testgrp -Location 'East Asia' -VMName testvm' -SQLServerIPorName SQLServer -SQLUserName sa -SQLPassword Admin098
+    C:\PS> .\Install-WebServerRoleOnRMVM.Raw.ps1 -ClientID TestIIS5 -AzureUserName $AzureUserName -AzurePassword $AzurePassword -AzureSubscriptionID $AzureSubscriptionID -Location 'east asia' -ResourceGroupName 'resourcegrp-bhaskar' -VMName 'ScriptVM-AUTO' 
+
+    .EXAMPLE
+    C:\PS> 
 
     .LINK
-    http://www.netenrich.com/
-#>
+    http://www.netenrich.com/#>
+
 [CmdletBinding()]
 Param
 (
@@ -86,26 +68,14 @@ Param
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$AzureSubscriptionID,
 
-	[Parameter(ValueFromPipelineByPropertyName)]
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$Location,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
     [String]$ResourceGroupName,
 
-	[Parameter(ValueFromPipelineByPropertyName)]
-    [String]$Location,
-    
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$VMName,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerIPorName,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerPort,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLUserName,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLPassword
+    [String]$VMName
 )
 
 Begin
@@ -201,7 +171,7 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion -ge $ScriptUploadConfig.RequiredPSVersion)
+    If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
@@ -262,17 +232,6 @@ Begin
                 Exit
             }
 
-            # Validate parameter: ResourceGroupName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: ResourceGroupName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($ResourceGroupName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
             # Validate parameter: Location
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: Location. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($Location))
@@ -284,45 +243,23 @@ Begin
                 Exit
             }
 
+            # Validate parameter: ResourceGroupName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: ResourceGroupName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($ResourceGroupName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ResourceGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. ResourceGroupName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
             # Validate parameter: VMName
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMName. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($VMName))
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. VMName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-            # Validate parameter: SQLServerIPorName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLServerIPorName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLServerIPorName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLServerIPorName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLServerIPorName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-            # Validate parameter: SQLUserName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLUserName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLUserName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLUserName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLUserName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
-            # Validate parameter: SQLPassword
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLPassword. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLPassword))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLPassword parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLPassword parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -342,60 +279,69 @@ Begin
     {
         Try
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Attempting to login to Azure RM subscription." 
+            Write-LogFile -FilePath $LogFilePath -LogText "Attempting to login to Azure RM subscription" 
             $SecurePassword = ConvertTo-SecureString -AsPlainText $AzurePassword -Force
             $Cred = New-Object System.Management.Automation.PSCredential -ArgumentList $AzureUserName, $securePassword
             (Login-AzureRmAccount -Credential $Cred -SubscriptionId $AzureSubscriptionID -ErrorAction Stop) | Out-Null
-            Write-LogFile -FilePath $LogFilePath -LogText "Login to Azure RM successful."
+            Write-LogFile -FilePath $LogFilePath -LogText "Login to Azure RM successful"
         }
         Catch
         {
-            $ObjOut = "Error logging in to Azure Account.`n$($Error[0].Exception.Message)"
-            Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Error logging in to Azure Account.`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
+            Write-LogFile -FilePath $LogFilePath -LogText $ObjOut
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
         }
     }
 }
+
 Process
 {
-    # 1. Validating all Parameters
     Validate-AllParameters
 
-    # 2. Login to Azure RM Account
-
+    # 1. Login to Azure subscription
     Login-ToAzureAccount
 
-    # 3. Checking for the reosurce group existence
+    # 2. Check if Resource Group exists. Create Resource Group if it does not exist.
     Try
     {
-        Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
+       Write-LogFile -FilePath $LogFilePath -LogText "Checking existance of resource group '$ResourceGroupName'"
         $ResourceGroup = $null
-        ($ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
+        ($ResourceGroup = Get-AzureRmResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue) | Out-Null
+    
         If($ResourceGroup -ne $null) # Resource Group already exists
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Resource Group already exists"
+           Write-LogFile -FilePath $LogFilePath -LogText "Resource Group already exists"
         }
-        Else
+        Else # Resource Group does not exist. Can't continue without creating resource group.
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "The resource group $ResourceGroupName does not exist.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "The resource group $ResourceGroupName does not exist."
-            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-            Write-Output $output
-            Exit
+            Try
+            {
+               Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' does not exist. Creating resource group."
+                ($ResourceGroup = New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Location) | Out-Null
+               Write-LogFile -FilePath $LogFilePath -LogText "Resource group '$ResourceGroupName' created"
+            }
+            Catch
+            {
+                $ObjOut = "Error while creating Azure Resource Group '$ResourceGroupName'.`r`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut"
+                Exit
+            }
         }
     }
     Catch
     {
-        $ObjOut = "Error while getting Azure Resource Group details.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while getting Azure Resource Group details.`r`n$($Error[0].Exception.Message)`r`n<#BlobFileReadyForUpload#>"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
-        Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+        Write-LogFile -FilePath $LogFilePath -LogText $ObjOut
         Exit
     }
 
-    # 4. Checking for the VM existence
+    # 3. Checking for the VM existence
     Try
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Verifying the VM existence in the subscription." 
@@ -403,7 +349,6 @@ Process
         ($VMExist = Get-AzureRMVM -ResourceGroupName $ResourceGroupName -Name $VMName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($VMExist)
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine is already exist."
             ($VMStatus = Get-AzureRMVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
             $state = $VMStatus.Statuses | Where-Object {$_.DisplayStatus -eq "VM Running"}
             if($state.code -eq 'PowerState/running')
@@ -437,13 +382,10 @@ Process
         Exit
     }
 
-    # 5. Checking for the SQL Connectvity from Any Azure VM
+    # 4. Install the Web Server role and configure Web Server.
     Try
     {
-        if([string]::IsNullOrEmpty($SQLServerPort))
-        {
-            $SQLServerPort = 1433 
-        }
+        Write-LogFile -FilePath $LogFilePath -LogText "Installing the Web Server role and configure Web Server."
 
         Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
         $extensions = $VMExist.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
@@ -453,59 +395,45 @@ Process
             ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($RemoveState.StatusCode -eq 'OK')
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing CustomScript extension and adding new handle."
+                Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle for Installing Web Server Role."
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing CustomScript extensions.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Unable to remove the existing CustomScript extensions."
+                Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing VM extensions.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Unable to remove the existing VM extensions."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
             }
         }
 
-        $ExtensionName = "SQLConnectCheck"
-        Write-LogFile -FilePath $LogFilePath -LogText "Trying to set the extension for SQL Connectivity on VM"
+        $ExtensionName = $VMName + "_InstallWebServerRole"
+        Write-LogFile -FilePath $LogFilePath -LogText "Trying to Set the Extension for Web Server Role Installation."
 
-        ($PreReqCheckExtension = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/Test-SQLServerConnectivityCS.ps1" -Run Test-SQLServerConnectivityCS.ps1 -Argument "$SQLServerIPorName $SQLServerPort $SQLUserName $SQLPassword" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        ($IIS_InstallExtensionStatus = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/CSEInstall-WebServerRole.ps1" -Run 'CSEInstall-WebServerRole.ps1' -ResourceGroupName $ResourceGroupName -Location $Location ` -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
 
-        if($PreReqCheckExtension.StatusCode -eq 'OK')
+        if($IIS_InstallExtensionStatus.StatusCode -eq 'OK')
         {
+            Write-LogFile -FilePath $LogFilePath -LogText "Extension for Web Server Role Installation has been set successfully."
             ($InstallationStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
             if($InstallationStatus -ne $null)
             {
+                Write-LogFile -FilePath $LogFilePath -LogText "Extension for Web Server Role Installation is currently in $($InstallationStatus.ProvisioningState) state."
                 while($InstallationStatus.ProvisioningState -notin ('Succeeded','Failed'))
                 {
                     ($InstallationStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
                 }
-
-                ($ScriptStatus = Get-AzureRMVM -Name $VMName -ResourceGroupName $ResourceGroupName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
-                $ExtScriptStatus = $ScriptStatus.Extensions | Where-Object {$_.Name -eq $ExtensionName}
-                if(($ExtScriptStatus.Statuses.Code -eq 'ProvisioningState/succeeded'))
+                if($InstallationStatus.Statuses.Code -eq 'ProvisioningState/succeeded')
                 {
-                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}).Message
-                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdErr'}).Message
-                    if(($message2 -eq $null))
-                    {
-                        Write-LogFile -FilePath $LogFilePath -LogText "SQL Connection has been tested from $VMName and State is : $message1."
-                        $ObjOut = "SQL Connection has been tested from $VMName and State is : $message1."
-                        $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                        Write-Output $output
-                    }
-                    Else 
-                    {
-                        Write-LogFile -FilePath $LogFilePath -LogText "SQL Connection test Failed from $VMName.$message2`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "SQL Connection test Failed from $VMName.$message2"
-                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                        Write-Output $output
-                        Exit                        
-                    }
+                    Write-LogFile -FilePath $LogFilePath -LogText "IIS Role installation has been installed successfully on - $VMName."
+                    $ObjOut = "IIS Role installation has been installed successfully on - $VMName."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    Write-Output $output
                 }
                 else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Provisioning the script for SQL Connectivity check from $VMName was failed.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Provisioning the script for SQL Connectivity check from $VMName was failed."
+                    Write-LogFile -FilePath $LogFilePath -LogText "IIS Role installation could NOT complete for - $VMName. Status code: $($InstallationStatus.Statuses.Code)`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "IIS Role installation could NOT complete for - $VMName. Status code: $($InstallationStatus.Statuses.Code)"
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -513,8 +441,8 @@ Process
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "The extension was not installed for SQL Connectivity check from $VMName`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "The extension was not installed for SQL Connectivity check from $VMName"
+                Write-LogFile -FilePath $LogFilePath -LogText "The CustomScript extension enablement for For IIS Installtion has failed.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "The CustomScript extension enablement for IIS Role Installation has failed."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -522,8 +450,8 @@ Process
         }
         Else
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension for SQL Connectivity check from $VMName`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Unable to install the custom script extension for SQL Connectivity check from $VMName"
+            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension For IIS installation for Virtual Machine.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Unable to install the custom script extension For IIS installation for Virtual Machine."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit            
@@ -531,52 +459,14 @@ Process
     }
     catch
     {
-        $ObjOut = "Error while setting the script for SQL Connectivity check from $VMName.$($Error[0].Exception.Message)"
+        $ObjOut = "Error while adding Installing the IIS Role on $VMName virtual Machine.$($Error[0].Exception.Message)`r`nLine: $($Error[0].InvocationInfo.ScriptLineNumber) Char: $($Error[0].InvocationInfo.OffsetInLine)"
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-Output $output
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Exit
     }
-
-    # 7. Custom script Cleanup activity to avoid script rerun on Virtual Machine restarts
-    Try 
-    {
-        Write-LogFile -FilePath $LogFilePath -LogText "Checking for the existing custom script extensions."
-        ($VMObjExtension = Get-AzureRmVm -Name $VMName -ResourcegroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
-        if($VMObjExtension -ne $null)
-        {
-            $extensions = $VMObjExtension.Extensions | Where-Object {$_.VirtualMachineExtensionType -eq 'CustomScriptExtension'}
-            if($extensions)
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Removing the existing CustomScript extensions."
-                ($RemoveState = Remove-AzureRmVMExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $($extensions.Name) -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
-                if($RemoveState.StatusCode -eq 'OK')
-                {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Successfully removed the existing extension and adding new handle."
-                }
-                else
-                {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Unable to remove the existing extensions.`r`n<#BlobFileReadyForUpload#>"
-					$ObjOut = "Unable to remove the existing extensions."
-                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                }
-            }
-        }
-        Else 
-        {
-            Write-LogFile -FilePath $LogFilePath -LogText "Unable to fetch the Vm information to remove extension.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Unable to fetch the Vm information to remove extension."
-            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")            
-        }
-    }
-    Catch
-    {
-        Write-LogFile -FilePath $LogFilePath -LogText "Error while removing the extension.`r`n<#BlobFileReadyForUpload#>"
-        $ObjOut = "Error while removing the extension."
-        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-    }
 }
 End
 {
-    Write-LogFile -FilePath $LogFilePath -LogText "####[ Script execution completed cuccessfully: $($MyInvocation.MyCommand.Name) ]####`r`n<#BlobFileReadyForUpload#>"
+    Write-LogFile -FilePath $LogFilePath -LogText "####[ Script execution completed Successfully: $($MyInvocation.MyCommand.Name) ]####`r`n<#BlobFileReadyForUpload#>"
 }

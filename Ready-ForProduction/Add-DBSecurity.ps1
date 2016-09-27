@@ -24,12 +24,9 @@
     Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
 
     .PARAMETER VMName
-    Azure virtual Machine from which the connection to SQL access has to be tested
+    Azure virtual Machine On which the MARS Agent will be installed.
 
-    .PARAMETER SQLServerIPorName
-    SQL Server Name for which the connection has to be tested from the given VMName
-
-    .PARAMETER SQLServerPort
+    .PARAMETER SQLPort
     SQL Server instance Port
 
     .PARAMETER SQLUserName
@@ -37,6 +34,15 @@
 
     .PARAMETER SQLPassword
     SQl Server login user password
+
+    .PARAMETER DatabaseName
+    Database name for which the domain user to be added
+
+    .PARAMETER DomainUser
+    Domain user to be added to the Database i.e MyLab\user1
+
+    .PARAMETER RoleName
+    SQL Database role name
 
     .INPUTS
     All parameter values in String format.
@@ -66,7 +72,7 @@
                                           Under <appSettings> tag - <add key="RequiredPSVersion" value="2.0.1"/>
 
     .EXAMPLE
-    C:\PS> .\Test-SQLConnectionExtension.ps1 -ClientID 123456 -AzureUserName bhaskar@netenrich.com -AzurePassword Passw0rd1 -ResourceGroupName testgrp -Location 'East Asia' -VMName testvm' -SQLServerIPorName SQLServer -SQLUserName sa -SQLPassword Admin098
+    C:\PS> .\Add-DBSecurity.ps1 -ClientID 123456 -AzureUserName bhaskar@netenrich.com -AzurePassword Passw0rd1 -ResourceGroupName testgrp -Location 'East Asia' -VMName testvm -SQLPort 1433 SQLServer -SQLUserName sa -SQLPassword Admin098 -DatabaseName testdb -DomainUserName mylab\user1 -RoleName db_accessadmin
 
     .LINK
     http://www.netenrich.com/
@@ -96,16 +102,22 @@ Param
     [string]$VMName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerIPorName,
-
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerPort,
+    [string]$SQLPort,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SQLUserName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLPassword
+    [string]$SQLPassword,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$DatabaseName,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$DomainUser,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$RoleName
 )
 
 Begin
@@ -295,17 +307,6 @@ Begin
                 Exit
             }
 
-            # Validate parameter: SQLServerIPorName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLServerIPorName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLServerIPorName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLServerIPorName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLServerIPorName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
-            }
-
             # Validate parameter: SQLUserName
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLUserName. Only ERRORs will be logged."
             If([String]::IsNullOrEmpty($SQLUserName))
@@ -326,6 +327,61 @@ Begin
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
+            }
+
+            # Validate parameter: DatabaseName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DatabaseName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($DatabaseName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DatabaseName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. DatabaseName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+
+            # Validate parameter: DomainUser
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: DomainUser. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($DomainUser))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUser parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. DomainUser parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+            Else 
+            {
+                if($DomainUser -notlike "*\*")
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DomainUser parameter value is not valid.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. DomainUser parameter value is not valid."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    Write-Output $output
+                    Exit                    
+                }
+            }
+
+            # Validate parameter: RoleName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: RoleName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($RoleName))
+            {
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. RoleName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. RoleName parameter value is empty."
+                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                Write-Output $output
+                Exit
+            }
+            else 
+            {
+                if($RoleName -notin ("db_accessadmin","db_backupoperator","db_datareader","db_datawriter","db_ddladmin","db_denydatareader","db_denydatawriter","db_owner","db_securityadmin"))
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. RoleName parameter value is not a valid role name.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. RoleName parameter value is not a valid role name."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    Write-Output $output
+                    Exit
+                }    
             }
         }
         Catch
@@ -465,10 +521,10 @@ Process
             }
         }
 
-        $ExtensionName = "SQLConnectCheck"
-        Write-LogFile -FilePath $LogFilePath -LogText "Trying to set the extension for SQL Connectivity on VM"
+        $ExtensionName = "AddDBUser"
+        Write-LogFile -FilePath $LogFilePath -LogText "Trying to set the extension for Adding the DB User"
 
-        ($PreReqCheckExtension = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/Test-SQLServerConnectivityCS.ps1" -Run Test-SQLServerConnectivityCS.ps1 -Argument "$SQLServerIPorName $SQLServerPort $SQLUserName $SQLPassword" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        ($PreReqCheckExtension = Set-AzureRmVMCustomScriptExtension -Name $ExtensionName -FileUri "https://automationtest.blob.core.windows.net/customscriptfiles/Add-UserToDBCS.ps1" -Run Add-UserToDBCS.ps1 -Argument "$SQLServerIPorName $SQLServerPort $DatabaseName $SQLUserName $SQLPassword $DomainUser $RoleName" -ResourceGroupName $ResourceGroupName -Location $Location -VMName $VMName -TypeHandlerVersion 1.8 -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
 
         if($PreReqCheckExtension.StatusCode -eq 'OK')
         {
@@ -486,17 +542,17 @@ Process
                 {
                     $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}).Message
                     $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdErr'}).Message
-                    if(($message2 -eq $null))
+                    if(($message1 -eq $null) -and ($message2 -eq $null))
                     {
-                        Write-LogFile -FilePath $LogFilePath -LogText "SQL Connection has been tested from $VMName and State is : $message1."
-                        $ObjOut = "SQL Connection has been tested from $VMName and State is : $message1."
+                        Write-LogFile -FilePath $LogFilePath -LogText "User $DomainUser has been added with role $RoleName to database $DatabaseName successfully."
+                        $ObjOut = "User $DomainUser has been added with role $RoleName to database $DatabaseName successfully."
                         $output = (@{"Response" = [Array]$ObjOut; Status = "Success"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                     }
                     Else 
                     {
-                        Write-LogFile -FilePath $LogFilePath -LogText "SQL Connection test Failed from $VMName.$message2`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "SQL Connection test Failed from $VMName.$message2"
+                        Write-LogFile -FilePath $LogFilePath -LogText "Adding the user $DomainUser to $DatabaseName was failed.$message2`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Adding the user $DomainUser to $DatabaseName was failed.$message2"
                         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                         Exit                        
@@ -504,8 +560,8 @@ Process
                 }
                 else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Provisioning the script for SQL Connectivity check from $VMName was failed.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Provisioning the script for SQL Connectivity check from $VMName was failed."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Provisioning the script for adding the user to database was failed.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Provisioning the script for adding the user to database was failed."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -513,8 +569,8 @@ Process
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "The extension was not installed for SQL Connectivity check from $VMName`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "The extension was not installed for SQL Connectivity check from $VMName"
+                Write-LogFile -FilePath $LogFilePath -LogText "The extension was not installed for adding the user to database.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "The extension was not installed for adding the user to database"
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -522,8 +578,8 @@ Process
         }
         Else
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension for SQL Connectivity check from $VMName`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Unable to install the custom script extension for SQL Connectivity check from $VMName"
+            Write-LogFile -FilePath $LogFilePath -LogText "Unable to install the custom script extension for adding the user to database.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Unable to install the custom script extension for adding the user to database."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit            
