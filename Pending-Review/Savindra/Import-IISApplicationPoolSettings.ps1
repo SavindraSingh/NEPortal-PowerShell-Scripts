@@ -1,3 +1,5 @@
+# NOTE: This script is written for manual execution. NOT for Diva/NE Portal.
+
 [CmdletBinding()]
 Param
 (

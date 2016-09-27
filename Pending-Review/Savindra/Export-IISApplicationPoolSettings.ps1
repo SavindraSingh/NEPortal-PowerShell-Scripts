@@ -1,13 +1,17 @@
+# NOTE: This script is written for manual execution. NOT for Diva/NE Portal.
+
 [CmdletBinding()]
 Param
 (
-    [Parameter(Mandatory)]
-    [string[]]$ApplicationPoolName = '*'
+    [Parameter(Mandatory, ValueFromPipeline, HelpMessage="Either provide an Application pool name or give '*' to export all application pools.")]
+    [string[]]$ApplicationPoolName = '*',
+
+    [Parameter(HelpMessage="Specify the path to save exported XML files.")]
+    [string]$OutputFolder = "C:\Temp\AppPoolBackup"
 )
 
 Begin
 {
-    $OutputFolder = "C:\Temp\AppPoolBackup"
     Try
     {
         If(Test-Path $OutputFolder -ErrorAction SilentlyContinue) {}
@@ -15,7 +19,7 @@ Begin
     }
     Catch
     {
-        Write-Host "Error while creating output folder 'C:\Temp\AppPoolBackup'.`r`n$($Error[0].Exception.Message)" -ForegroundColor Red
+        Write-Host "Error while creating output folder '$OutputFolder'.`r`n$($Error[0].Exception.Message)" -ForegroundColor Red
         Exit
     }
 }
