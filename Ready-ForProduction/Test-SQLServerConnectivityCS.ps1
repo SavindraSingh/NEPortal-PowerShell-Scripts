@@ -19,10 +19,10 @@ Try
     }
     Else 
     {
-        Write-Output "Failed"
+        Write-Error "Failed"
     }
 }
 Catch
 {
-    Write-Output "Error while checking SQL connection. $($Error[0].Exception.Message)"
+    Write-Error "Error while checking SQL connection. $($Error[0].Exception.Message)"
 }

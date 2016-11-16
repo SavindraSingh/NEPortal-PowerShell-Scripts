@@ -222,7 +222,8 @@ Begin
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+       $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -537,8 +538,8 @@ Begin
                     }
                 }
                 $Script:ParamCount = $script:FirewallRuleNames.Count
-                if(($script:FirewallRuleNames.Count -eq 1)){}
-                Else
+                if(($script:FirewallRuleNames.Count -eq 0)){}
+                Elseif($script:FirewallRuleNames.Count -ge 1)
                 {
                     if((($script:FirewallRuleNames.Count -gt 1) -and ($Script:ScriptActions -eq $script) -and ($Script:FirewallActions -eq $Script:ParamCount) -and ($Script:FlowDirections -eq $Script:ParamCount) -and ($Script:LocalPorts -eq $Script:ParamCount) -and ($Script:RemotePorts -eq $Script:ParamCount) -and ($Script:Protocols -eq $Script:ParamCount) -and ($Script:FirewallProfiles -eq $Script:ParamCount)))
                     {
@@ -551,6 +552,8 @@ Begin
                         Write-Output $output
                         Exit
                     }
+                }
+                else {
                 }
             }
         }

@@ -33,15 +33,15 @@ try
         }
         Else
         {
-            Write-Output "Additional Domain controller has not been configured successfully"
+            Write-Error "Additional Domain controller has not been configured successfully"
         }
     }
     Else
     {
-        Write-Output "Active Directory Domain Services role was not installed successfully"
+        Write-Error "Active Directory Domain Services role was not installed successfully"
     }
 }
 catch
 {
-    Write-Output "There was an error in Installing and Configuring the Active Directory"
+    Write-Error "There was an error in Installing and Configuring the Active Directory"
 }

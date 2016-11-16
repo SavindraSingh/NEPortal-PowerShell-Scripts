@@ -549,7 +549,7 @@ Begin
 
             # Validate parameter: ProbeName
             Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: ProbeName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($ResourceGroupName))
+            If([String]::IsNullOrEmpty($ProbeName))
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
                 $ObjOut = "Validation failed. ProbeName parameter value is empty."
@@ -824,7 +824,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $InboundBackEndPort is a valid port number.Only ERRORs will be logged."
                 #$InboundBackEndPort = [Int32]$InboundBackEndPort
-                write-host ([Int32]$InboundBackEndPortt -notin (1..65535))
+                #write-host ([Int32]$InboundBackEndPortt -notin (1..65535))
                 if([Int32]$InboundBackEndPortt -notin (1..65535))
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundBackEndPort parameter value is not a vlaid port number.`r`n<#BlobFileReadyForUpload#>"

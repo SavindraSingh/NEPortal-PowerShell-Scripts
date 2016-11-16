@@ -696,6 +696,7 @@ Process
         If($pol -eq $null)
         {
             Write-LogFile -FilePath $LogFilePath -LogText "No Policy exist with name '$VMBackupPolicyName. Creating new Policy object."
+            
             ($pol = New-AzureRmRecoveryServicesBackupProtectionPolicy -Name "$VMBackupPolicyName" -WorkloadType AzureVM -RetentionPolicy $retPol -SchedulePolicy $schPol -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             Write-LogFile -FilePath $LogFilePath -LogText "New Backup policy created successfully."
         }
@@ -1056,7 +1057,9 @@ Process
                     Write-LogFile -FilePath $LogFilePath -LogText "Recovery Services Backup Protection for VM '$VMName' enabled successfully."
 
                     Write-LogFile -FilePath $LogFilePath -LogText "Fetching Azure Recovery Services Backup Container object."
-                    ($namedContainer = Get-AzureRmRecoveryServicesBackupContainer -ContainerType AzureVM -Status Registered -Name $VMName -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                     ($RSVault | Set-AzureRmRecoveryServicesVaultContext -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                    ($namedContainer = Get-AzureRmRecoveryServicesBackupContainer -ContainerType AzureVM -Status Registered -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+
                     Write-LogFile -FilePath $LogFilePath -LogText "Azure Recovery Services Backup Container object fetched successfully."
 
                     Write-LogFile -FilePath $LogFilePath -LogText "Fetching Azure Recovery Services Backup item."

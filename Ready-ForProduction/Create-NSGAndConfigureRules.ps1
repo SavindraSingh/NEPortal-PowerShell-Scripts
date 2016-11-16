@@ -85,7 +85,7 @@
      ==========    ====      ======
 
     .EXAMPLE
-    C:\PS> .\Attach-NSGToVM.ps1 -ClientID 123456 -AzureUserName 'testlab@netenrich.com' -AzurePassword 'pass12@word' -AzureSubscriptionID 'ae7c7576-f01c-4026-9b94-d05e04e459fc' -NSGGroup 'testGrp' -ResourceGroupName 'TestLabRG' -VMName 'testImage123'
+    C:\PS> .\Create-NSGAndConfigureRules.ps1 -ClientID 123 -AzureUserName sailakshmi.penta@netenrich.com -AzurePassword pass123# -AzureSubscriptionID "ca68598c-ecc3-4abc-b7a2-1ecef33f278d" -ResourceGroupName "todelete" -Location "South Central US" -NSGGroupName "samplensg1" -RuleName "samplerule" -SourceAddressPrefix "Internet" -SourcePortRange "80" -DestinationAddressPrefix "*" -DestinationPortRange "*" -RuleAction "Allow" -Protocol "Tcp" -FlowDirection "Inbound -Priority "101"
 
     .LINK
     http://www.netenrich.com/
@@ -242,7 +242,8 @@ Begin
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+       $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -323,10 +324,10 @@ Begin
 
         Try
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating if SourceAddressPrefix is valid input. Only ERRORs will be logged."
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating if $Name is valid input. Only ERRORs will be logged."
             if(($Saddress -in ('*','Internet','AzureLoadBalancer','VirtualNetwork')))
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "SourceAddressPrefix '$Saddress' is  a valid Input"
+                Write-LogFile -FilePath $LogFilePath -LogText "$Name '$Saddress' is  a valid Input"
             }
             elseif(($Saddress -notin ('*','Internet','AzureLoadBalancer','VirtualNetwork')))
             {
@@ -763,7 +764,7 @@ Begin
             }
 
             $Script:ParamCount = $RuleNames.Count
-            if($Script:RuleNames.Count -eq 1)
+            if($Script:RuleNames.Count -eq 0)
             {
             }
             Else

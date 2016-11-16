@@ -200,7 +200,8 @@ Begin
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -459,7 +460,7 @@ Process
         ($VMExist = Get-AzureRMVM -ResourceGroupName $ResourceGroupName -Name $VMName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($VMExist)
         {
-        Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine is already exist."
+            Write-LogFile -FilePath $LogFilePath -LogText "Virtual Machine is already exist."
             ($VMStatus = Get-AzureRMVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
             $state = $VMStatus.Statuses | Where-Object {$_.DisplayStatus -eq "VM Running"}
             if($state.code -eq 'PowerState/running')
@@ -523,7 +524,7 @@ Process
         }
 
         $ExtensionName = $VMName + "_JoinAD"
-        ($status = Set-AzureRmVMExtension -Publisher "Microsoft.Compute" -ExtensionType "JsonADDomainExtension" -Settings $DomainString -ProtectedSettings $PasswordString -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $ExtensionName -TypeHandlerVersion "1.0" -Location $($ResourceGroup.Location) -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+        ($status = Set-AzureRmVMExtension -Publisher "Microsoft.Compute" -ExtensionType "JsonADDomainExtension" -Settings $DomainString -ProtectedSettings $PasswordString -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $ExtensionName -TypeHandlerVersion "1.0" -Location $Location -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
         if($status.StatusCode -eq 'OK')
         {
             ($JsonStatus = Get-AzureRmVMExtension -Name $ExtensionName -ResourceGroupName $ResourceGroupName -VMName $VMName -Status -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null

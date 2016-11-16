@@ -501,8 +501,8 @@ Process
                 $ExtScriptStatus = $ScriptStatus.Extensions | Where-Object {$_.Name -eq $ExtensionName}
                 if(($ExtScriptStatus.Statuses.Code -eq 'ProvisioningState/succeeded'))
                 {
-                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}).Message
-                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdErr'}).Message
+                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -match 'StdOut'}).Message
+                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -match 'StdErr'}).Message
                     if(($message1 -eq $null) -and ($message2 -eq $null))
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "Additional DC installtion and Configuration has been done successfully for $VMName.`r`n<#BlobFileReadyForUpload#>"

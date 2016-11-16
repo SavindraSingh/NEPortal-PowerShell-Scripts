@@ -187,13 +187,14 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
+    If($AzurePSVersion -ge $ScriptUploadConfig.RequiredPSVersion)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -398,8 +399,10 @@ Begin
         Catch
         {
             $ObjOut = "Error logging in to Azure Account.`n$($Error[0].Exception.Message)"
-            Write-Host $ObjOut -ForegroundColor Red
+            #Write-Host $ObjOut -ForegroundColor Red
             Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+            $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+            Write-Output $output
             Exit
         }
     }

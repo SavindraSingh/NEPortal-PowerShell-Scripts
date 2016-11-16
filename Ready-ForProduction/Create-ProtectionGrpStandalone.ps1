@@ -157,7 +157,7 @@ Param
     [string]$InitialreplicationDateTime,
 
     [Parameter(ValueFromPipelineByPropertyName)]
-    [Bool]$LongTerm,
+    [String]$LongTerm,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [String]$DailyScheduleTime,
@@ -277,7 +277,23 @@ Begin
     }
 
     Write-LogFile -FilePath $LogFilePath -LogText "####[ Script Execution started: $($MyInvocation.MyCommand.Name).]####" -Overwrite
-    
+
+    # Check minumum required version of Azure PowerShell
+    $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
+    If($AzurePSVersion -ge $ScriptUploadConfig.RequiredPSVersion)
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
+    }
+    Else 
+    {
+       $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
+        $output = (@{"Response" = [Array]$ObjOut; "Status" = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+        Write-Output $output
+        Exit
+    }
+
     Function Validate-AllParameters
     {
         Try
@@ -302,6 +318,24 @@ Begin
                 $output = (@{"Response" = $ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
+            }
+
+            #Validate parameter: LongTerm
+            If($LongTerm.Length -ne 0){
+                $LongTerm
+                $arr = $true,$false,"0","1"
+                if($LongTerm -in $arr){
+                    $Script:LongTerm = [boolean]$Script:LongTerm
+                    Write-Host "helo $($Script:LongTerm.GetType())"
+                    if($LongTerm -eq $true){"hello everyone"}
+                }
+                else{
+                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProtectionGroupName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                     $ObjOut = "Validation failed. ProtectionGroupName parameter value is empty."
+                     $output = (@{"Response" = $ObjOut; "Status" = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                     Write-Output $output
+                     Exit
+                }
             }
 			
             # Validate parameter: ProtectionGroupName

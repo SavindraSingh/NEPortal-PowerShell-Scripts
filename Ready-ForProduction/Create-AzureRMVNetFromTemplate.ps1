@@ -187,13 +187,14 @@ Begin
 
     # Check minumum required version of Azure PowerShell
     $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
-    If($AzurePSVersion -gt $ScriptUploadConfig.RequiredPSVersion)
+    If($AzurePSVersion -ge $ScriptUploadConfig.RequiredPSVersion)
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is available."
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -385,8 +386,20 @@ Begin
             Else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if subnet1Prefix is valid IP Address. Only ERRORs will be logged."
-                $checkIP = $subnet1Prefix.Split("/")[0]
-                If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                if($subnet1Prefix -match '^(\d{1,3}\.){3}\d{1,3}$|^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$')
+                {
+                    $checkIP = $subnet1Prefix.Split("/")[0]
+                    If([bool]($checkIP -as [ipaddress])) 
+                    { <# Valid IP address #>}
+                    Else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. subnet1Prefix '$subnet1Prefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. subnet1Prefix '$subnet1Prefix' is not a valid IP address."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
+                }
                 Else
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. subnet1Prefix '$subnet1Prefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
@@ -410,8 +423,20 @@ Begin
             Else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if subnet2Prefix is valid IP Address. Only ERRORs will be logged."
-                $checkIP = $subnet2Prefix.Split("/")[0]
-                If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                if($subnet2Prefix -match '^(\d{1,3}\.){3}\d{1,3}$|^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$')
+                {
+                    $checkIP = $subnet2Prefix.Split("/")[0]
+                    If([bool]($checkIP -as [ipaddress])) 
+                    { <# Valid IP address #>}
+                    Else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. subnet2Prefix '$subnet2Prefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. subnet2Prefix '$subnet2Prefix' is not a valid IP address."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
+                }
                 Else
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. subnet2Prefix '$subnet2Prefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
@@ -419,7 +444,7 @@ Begin
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
-                }
+                }    
             }
 
             # Validate parameter: GatewayPrefix
@@ -435,8 +460,19 @@ Begin
             Else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if GatewayPrefix is valid IP Address. Only ERRORs will be logged."
-                $checkIP = $GatewayPrefix.Split("/")[0]
-                If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                if($GatewayPrefix -match '^(\d{1,3}\.){3}\d{1,3}$|^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$')
+                {        
+                    $checkIP = $GatewayPrefix.Split("/")[0]
+                    If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
+                    Else
+                    {
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. GatewayPrefix '$GatewayPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. GatewayPrefix '$GatewayPrefix' is not a valid IP address."
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        Write-Output $output
+                        Exit
+                    }
+                }
                 Else
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. GatewayPrefix '$GatewayPrefix' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"

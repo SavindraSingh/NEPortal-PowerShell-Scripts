@@ -45,22 +45,22 @@ try
                 }
                 else 
                 {
-                    Write-Output "Database restoration has been failed.$Status"
+                    Write-Error "Database restoration has been failed.$Status"
                 }
             }
             else 
             {
-                Write-Output "Database is already exist. Cannot restore into existing database"
+                Write-Error "Database is already exist. Cannot restore into existing database"
             }
         }
         $SqlConnection.Close()
     }
     else 
     {
-        Write-Output "Database backup file does not exist or has not been downloaded."
+        Write-Error "Database backup file does not exist or has not been downloaded."
     }
 }
 catch
 {
-    Write-Output "There was an exception in creating and restoring the database."
+    Write-Error "There was an exception in creating and restoring the database."
 }

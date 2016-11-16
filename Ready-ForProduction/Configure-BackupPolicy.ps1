@@ -207,11 +207,36 @@ Begin
             If($DaysOfWeek.Contains(","))
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "DaysOfWeek parameter value is received as an Array. Splitting the values."
+                [string]$samplestr = ""
                 $arrDaysOfWeek = $DaysOfWeek.Split(",")
                 ForEach ($Day in $arrDaysOfWeek)
                 {
                     Try
-                    { [Dayofweek]$Day | Out-Null }
+                    { 
+                         if([Dayofweek]$Day){
+                             if("Monday" -match $Day){
+                                 $samplestr = $samplestr + "Monday" + ","
+                             }
+                             elseif("Tuesday" -match $Day){
+                                 $samplestr = $samplestr + "Tuesday" + ","
+                             }
+                             elseif("Wednesday" -match $Day){
+                                $samplestr = $samplestr + "Wednesday" + ","
+                             }
+                             elseif("Thursday" -match $Day){
+                                 $samplestr = $samplestr + "Thursday" + ","
+                             }
+                             elseif("Friday" -match $Day){
+                                 $samplestr = $samplestr + "Friday" + ","
+                             }
+                             elseif("Saturday" -match $Day){
+                                 $samplestr = $samplestr + "Saturday" + ","
+                             }
+                             elseif("Saturday" -match $Day){
+                                 $samplestr = $samplestr + "Saturday" + ","
+                             }
+                       }
+                    }
                     Catch
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "Invalid value passed through parameter DaysOfWeek: $Day`r`n<#BlobFileReadyForUpload#>"
@@ -220,6 +245,8 @@ Begin
                         Write-Output $output
                         Exit
                     }
+                    $Script:DaysOfWeek=$samplestr.TrimEnd(",")
+
                 }
             }
             Else

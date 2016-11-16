@@ -29,7 +29,7 @@
 
     Azure Location to use for creating/saving/accessing resources (should be a valid location. Refer to https://azure.microsoft.com/en-us/regions/ for more details.)
 
-    .PARAMETER SQLServerName
+    .PARAMETER VMName
 
     Azure virtual Machine which which has SQL Server installed.
 
@@ -65,7 +65,7 @@
      ==========    ====      ======
 
     .EXAMPLE
-    C:\PS> .\Create-RestoreDatabase.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -ResourceGroupName testgrp -Location 'East Asia' -SQLServerName SQLServer -LoginUserName MyLab\bhaskar -LoginPassword  Password1 -DatabaseName testdb -BackupFileBlobUrl "https://mystorage.blob.core.net/mycontainer/dbbackup.bak"
+    C:\PS> .\Create-RestoreDatabase.ps1 -ClientID 12345 -AzureUserName bhaskar@desharajubhaskaroutlook.onmicrosoft.com -AzurePassword Pa55w0rd1! -AzureSubscriptionID 13483623-4785-4789-8d13-b58c06d37cb9 -ResourceGroupName testgrp -Location 'East Asia' -VMName SQLServer -LoginUserName MyLab\bhaskar -LoginPassword  Password1 -DatabaseName testdb -BackupFileBlobUrl "https://mystorage.blob.core.net/mycontainer/dbbackup.bak"
 
     .LINK
     http://www.netenrich.com/
@@ -92,7 +92,7 @@ Param
     [String]$Location,
     
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SQLServerName,
+    [string]$VMName,
 
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$LoginUserName,
@@ -206,7 +206,8 @@ Begin
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+       $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -261,12 +262,12 @@ Begin
                 Exit
             }
 
-            # Validate parameter: SQLServerName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: SQLServerName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($SQLServerName))
+            # Validate parameter: VMName
+            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: VMName. Only ERRORs will be logged."
+            If([String]::IsNullOrEmpty($VMName))
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SQLServerName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SQLServerName parameter value is empty."
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. VMName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. VMName parameter value is empty."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -387,7 +388,7 @@ Process
         foreach($NameSpace in $ReqNameSpces)
         {
             Write-LogFile -FilePath $LogFilePath -LogText "Registering the provider $NameSpace" 
-            ($Status = Register-AzureRmResourceProvider -ProviderNamespace $NameSpace -Force -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+            ($Status = Register-AzureRmResourceProvider -ProviderNamespace $NameSpace -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             If($Status)
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Verifying the provider $NameSpace Registration."
@@ -531,8 +532,8 @@ Process
                 $ExtScriptStatus = $ScriptStatus.Extensions | Where-Object {$_.Name -eq $ExtensionName}
                 if(($ExtScriptStatus.Statuses.Code -eq 'ProvisioningState/succeeded'))
                 {
-                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdOut'}).Message
-                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -contains 'StdErr'}).Message
+                    $message1 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -match 'StdOut'}).Message
+                    $message2 = ($ExtScriptStatus.Substatuses | Where-Object {$_.code -match 'StdErr'}).Message
                     if(($message1 -eq $null) -and ($message2 -eq $null))
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "Database has been restored successfully on $VMName.`r`n<#BlobFileReadyForUpload#>"

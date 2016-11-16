@@ -393,7 +393,9 @@ Process
         ($NetworkProfile = Get-AzureRmNetworkInterface -Name $NICName -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($NetworkProfile -ne $null)
         {
-            $PName = $NetworkProfile.IpConfigurations.PublicIpAddress
+            $PNamedetails = $NetworkProfile.IpConfigurations.PublicIpAddress.Id
+            $PName = Split-Path $PNamedetails -Leaf
+
             $PublicIpDetails = $null
             ($PublicIpDetails = Get-AzureRmPublicIpAddress -Name $PName -ResourceGroupName $ResourceGroupName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
             if($PublicIpDetails -ne $null)
