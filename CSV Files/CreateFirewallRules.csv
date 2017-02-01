@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,VMName,FirewallRuleName,ScriptAction,FirewallAction,FlowDirection,LocalPort,RemotePort,Protocol,FirewallProfile
+123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,todelete,South Central US,testvmforcsv,testing,New,Allow,Inbound,80,80,tcp,Public

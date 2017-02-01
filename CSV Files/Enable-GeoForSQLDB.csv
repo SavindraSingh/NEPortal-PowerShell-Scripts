@@ -1,0 +1,4 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,PrimaryServerRG,PrimaryServerName,PrimaryDBName,SecondaryServerLocation,SecondaryServerRG,SecondaryServerName,SecondarySQLAdminUser,SecondarySQLAdminPassword,ReadableOrNon
+13,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testrg123,sampleser1,sampledb1,Central US,todelete,sampleser3,testuser,pass@123,All
+12,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testrg123,sampleser1,sampledb1,,todelete,sampleser2,,,All
+

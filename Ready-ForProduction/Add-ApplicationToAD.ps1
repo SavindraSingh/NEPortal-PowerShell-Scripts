@@ -189,7 +189,8 @@ Begin
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
@@ -359,7 +360,7 @@ Process
         ($ExistingApps = Get-AzureRmADApplication -IdentifierUri $ApplicationURI -ErrorAction SilentlyContinue -WarningAction SilentlyContinue) | Out-Null
         if($ExistingApps -eq $null)
         {       
-            ($NewAppStatus = New-AzureRmADApplication -DisplayName $AppDisplayName -IdentifierUris $ApplicationURI -HomePage $ApplocationHomePage -Password $Password -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+            ($NewAppStatus = New-AzureRmADApplication -DisplayName $AppDisplayName -IdentifierUris $ApplicationURI -HomePage $ApplocationHomePage -EndDate ($(Get-Date).AddDays(365)) -Password $Password -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($NewAppStatus -ne $null)
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "New application has been created successfully."
@@ -378,7 +379,7 @@ Process
                     {
                         Write-LogFile -FilePath $LogFilePath -LogText "Application has been created and added to Azure Active Directory.`r`n<#BlobFileReadyForUpload#>"
                         $ObjOut = "Application has been created and added to Azure Active Directory."
-                        $output = (@{"Response" = [Array]$ObjOut; Status = "Success";TenantID = $TenantID; SubscriptionID = $AzureSubscriptionID; ApplicationID = $ApplicationID} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                        $output = (@{"Response" = [Array]$ObjOut; Status = "Success";TenantID = $TenantID; SubscriptionID = $AzureSubscriptionID; ApplicationID = $ApplicationID; SecretKey = $Password} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                     }
                     else

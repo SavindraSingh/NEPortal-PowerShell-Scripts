@@ -178,7 +178,23 @@ Begin
     }
 
     Write-LogFile -FilePath $LogFilePath -LogText "####[ Script Execution started: $($MyInvocation.MyCommand.Name). For Client ID: $ClientID ]####" -Overwrite
-
+    
+    # Check minumum required version of Azure PowerShell
+    $AzurePSVersion = (Get-Module -ListAvailable -Name Azure -ErrorAction Stop).Version
+    If($AzurePSVersion -ge $ScriptUploadConfig.RequiredPSVersion)
+    {
+        Write-LogFile -FilePath $LogFilePath -LogText "Required version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
+    }
+    Else 
+    {
+        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
+        $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+        Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
+        Write-Output $output
+        Exit
+    }
+    
     Function Validate-AllParameters
     {
         # 1. Validate all parameters

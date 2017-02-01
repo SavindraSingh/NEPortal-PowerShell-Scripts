@@ -633,7 +633,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $ProbeInterval is a valid number.Only ERRORs will be logged."
                 $ProbeInterval = [Int32]$ProbeInterval
-                if($ProbeInterval -notin (5..2147483646))
+                if($ProbeInterval -ge 5 -and $ProbeInterval -le 2147483646)
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeInterval $ProbeInterval is not a valid Number.it must be in (5 to 2147483646).`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. ProbeInterval $ProbeInterval is not a valid Number.it must be in (5 to 2147483646)."
@@ -657,7 +657,7 @@ Begin
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $ProbeUnhealthythreshold is a valid number.Only ERRORs will be logged."
                 $ProbeUnhealthythreshold = [Int32]$ProbeUnhealthythreshold
-                if($ProbeUnhealthythreshold -notin (2..429496729))
+                if($ProbeUnhealthythreshold -ge 2 -and $ProbeUnhealthythreshold -le 429496729)
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. ProbeUnhealthythreshold $ProbeUnhealthythreshold is not a valid Number.it must be in(2..429496729).`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. ProbeUnhealthythreshold $ProbeUnhealthythreshold is not a valid Number.it must be in(2..429496729)."
@@ -825,7 +825,7 @@ Begin
                 Write-LogFile -FilePath $LogFilePath -LogText "Validating if the $InboundBackEndPort is a valid port number.Only ERRORs will be logged."
                 #$InboundBackEndPort = [Int32]$InboundBackEndPort
                 #write-host ([Int32]$InboundBackEndPortt -notin (1..65535))
-                if([Int32]$InboundBackEndPortt -notin (1..65535))
+                if([Int32]$InboundBackEndPort -notin (1..65535))
                 {
                     Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. InboundBackEndPort parameter value is not a vlaid port number.`r`n<#BlobFileReadyForUpload#>"
                     $ObjOut = "Validation failed. InboundBackEndPort parameter value is not a vlaid port number."
@@ -1331,7 +1331,7 @@ Process
     {
         Write-LogFile -FilePath $LogFilePath -LogText "Creating the Inbound NAT Rules"
         $InBoundRules = @()
-        for($i=0;$i -lt $Script:Params.Length;$i++)
+        if($Script:InboundNATRuleNames.Count -eq 0)
         {
             ($Inboundrule = New-AzureRmLoadBalancerInboundNatRuleConfig -Name $Script:InboundNATRuleNames[$i] -FrontendIpConfigurationId $FrontEndPools -Protocol $Script:InboundProtocols[$i] -FrontendPort $Script:InboundPorts[$i] -BackendPort $Script:InboundBackEndPorts[$i] -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
             if($Inboundrule.ProvisioningState -eq 'Succeeded')
@@ -1346,6 +1346,26 @@ Process
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
+            }
+        }
+        else 
+        {
+            for($i=0;$i -lt $Script:ParamCount;$i++)
+            {
+                ($Inboundrule = New-AzureRmLoadBalancerInboundNatRuleConfig -Name $Script:InboundNATRuleNames[$i] -FrontendIpConfigurationId $FrontEndPools -Protocol $Script:InboundProtocols[$i] -FrontendPort $Script:InboundPorts[$i] -BackendPort $Script:InboundBackEndPorts[$i] -ErrorAction Stop -WarningAction SilentlyContinue) | Out-Null
+                if($Inboundrule.ProvisioningState -eq 'Succeeded')
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "The Inbound rule $InboundNATRuleName has been created."
+                    $InBoundRules += $Inboundrule
+                }
+                Else
+                {
+                    Write-LogFile -FilePath $LogFilePath -LogText "Creation of inbound NAT rule $InboundNATRuleName[$i] was not successful.`r`n<#BlobFileReadyForUpload#>" 
+                    $ObjOut = "Creation of inbound NAT rule $InboundNATRuleName[$i] was not successful."
+                    $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
+                    Write-Output $output
+                    Exit
+                }
             }
         }
     }

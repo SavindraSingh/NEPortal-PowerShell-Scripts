@@ -254,18 +254,19 @@ Begin
     }
     Else 
     {
-        $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps."
+       $ObjOut = "Required version of Azure PowerShell not available. Stopping execution.`nDownload and install required version from: http://aka.ms/webpi-azps.`
+        `r`nRequired version of Azure PowerShell is $($ScriptUploadConfig.RequiredPSVersion). Current version on host machine is $($AzurePSVersion.ToString())."
         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
         Write-LogFile -FilePath $LogFilePath -LogText "$ObjOut`r`n<#BlobFileReadyForUpload#>"
         Write-Output $output
         Exit
     }
 
-    Function Check-PortInput
+   Function Check-PortInput
     {
         Param
         (
-           [String]$SPort
+           [String]$SPort,[String]$Name
         )
 
         Try
@@ -278,8 +279,8 @@ Begin
                 $SPort = [Int32]$SPort
                 if($SPort -notin (0..65535))
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. Sourceport $SPort parameter value is Invalid.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. Sourceport $SPort parameter value is Invalid."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name $SPort parameter value is Invalid.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. $Name $SPort parameter value is Invalid."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -292,16 +293,16 @@ Begin
                 $SPort2 = [Int32]$SPorts[1]
                 if(($SPort1 -notin (0..65535)) -or ($SPort2 -notin (0..65535)))
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. One of the Ports range value $SPort1 $SPort2 is invalid.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. One of the Ports range value $SPort1 $SPort2 is invalid."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. One of the $Name range value $SPort1 $SPort2 is invalid.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. One of the $Name range value $SPort1 $SPort2 is invalid."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
                 }
                 elseif($SPort2 -lt $SPort1)
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. The Port range $SPort is invalid.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. The Port range $SPort is invalid."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name range $SPort is invalid.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. $Name range $SPort is invalid."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -310,7 +311,7 @@ Begin
             else
             {
                 Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. The provided port range is invalid.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. The provided port range is invalid."
+                $ObjOut = "Validation failed. The provided $Name range is invalid."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -318,8 +319,8 @@ Begin
         }
         catch
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. DestinationAddressPrefix parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Validation failed. DestinationAddressPrefix parameter value is empty."
+            Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name parameter value is not valid.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Validation failed. $Name parameter value is not valid."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
@@ -330,7 +331,7 @@ Begin
     {
         Param
         (
-            [string]$Saddress
+            [string]$Saddress,[string]$Name
         )
 
         Try
@@ -340,13 +341,13 @@ Begin
             {
                 if($Saddress -match '^(\d{1,3}\.){3}\d{1,3}$|^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$')
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validating if SourceAddressPrefix is valid IP Address. Only ERRORs will be logged."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validating if $Name is valid IP Address. Only ERRORs will be logged."
                     $checkIP = $Saddress.Split("/")[0]
                     If([bool]($checkIP -as [ipaddress])) { <# Valid IP address #>}
                     Else
                     {
-                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
-                        $ObjOut = "Validation failed. SourceAddressPrefix '$Saddress' is not a valid IP address."
+                        Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name '$Saddress' is NOT a valid IP address.`r`n<#BlobFileReadyForUpload#>"
+                        $ObjOut = "Validation failed. $Name '$Saddress' is NOT a valid IP address."
                         $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                         Write-Output $output
                         Exit
@@ -354,8 +355,8 @@ Begin
                 }
                 else
                 {
-                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid input.`r`n<#BlobFileReadyForUpload#>"
-                    $ObjOut = "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid input."
+                    Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name '$Saddress' is NOT a valid input.`r`n<#BlobFileReadyForUpload#>"
+                    $ObjOut = "Validation failed. $Name '$Saddress' is NOT a valid input."
                     $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                     Write-Output $output
                     Exit
@@ -363,8 +364,8 @@ Begin
             }
             else
             {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid input.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid input."
+                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name '$Saddress' is NOT a valid input.`r`n<#BlobFileReadyForUpload#>"
+                $ObjOut = "Validation failed. $Name '$Saddress' is NOT a valid input."
                 $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
                 Write-Output $output
                 Exit
@@ -372,8 +373,8 @@ Begin
         }
         catch
         {
-            Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid input.`r`n<#BlobFileReadyForUpload#>"
-            $ObjOut = "Validation failed. SourceAddressPrefix '$Saddress' is NOT a valid input."
+            Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. $Name '$Saddress' is NOT a valid input.`r`n<#BlobFileReadyForUpload#>"
+            $ObjOut = "Validation failed. $Name '$Saddress' is NOT a valid input."
             $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
             Write-Output $output
             Exit
@@ -470,16 +471,6 @@ Begin
                     Write-Output $output
                     Exit
                 }                
-            }
-			# Validate parameter: RuleName
-            Write-LogFile -FilePath $LogFilePath -LogText "Validating Parameters: RuleName. Only ERRORs will be logged."
-            If([String]::IsNullOrEmpty($RuleName))
-            {
-                Write-LogFile -FilePath $LogFilePath -LogText "Validation failed. RuleName parameter value is empty.`r`n<#BlobFileReadyForUpload#>"
-                $ObjOut = "Validation failed. RuleName parameter value is empty."
-                $output = (@{"Response" = [Array]$ObjOut; Status = "Failed"; BlobURI = $LogFileBlobURI} | ConvertTo-Json).ToString().Replace('\u0027',"'")
-                Write-Output $output
-                Exit
             }
 
 			# Validate parameter: RuleName
@@ -795,12 +786,12 @@ Begin
             }
 
             $Script:ParamCount = $RuleNames.Count
-            if($Script:RuleNames.Count -eq 1)
+            if($Script:RuleNames.Count -eq 0)
             {
             }
-            Else
+            Elseif($Script:RuleNames.Count -ge 1)
             {
-                if(($($Script:RuleNames.Count) -gt 1) -and ($Script:Priorities.Count -ne $Script:ParamCount) -and ($Script:FlowDirections.Count -eq $Script:ParamCount) -and ( $Script:RuleActions.Count -eq $Script:ParamCount) -and ($Script:SourceAddressPrefixes.Count -eq $Script:ParamCount) -and ($Script:SourcePortRanges.Count -eq $Script:ParamCount) -and ($Script:DestinationAddressPrefixs.Count -eq $Script:ParamCount) -and ($Script:DestinationPortRanges.Count -eq $Script:ParamCount) -and ($Script:Protocols.Count -eq $Script:ParamCount))
+                if(($($Script:RuleNames.Count) -gt 1) -and ($Script:Priorities.Count -eq $Script:ParamCount) -and ($Script:FlowDirections.Count -eq $Script:ParamCount) -and ( $Script:RuleActions.Count -eq $Script:ParamCount) -and ($Script:SourceAddressPrefixes.Count -eq $Script:ParamCount) -and ($Script:SourcePortRanges.Count -eq $Script:ParamCount) -and ($Script:DestinationAddressPrefixs.Count -eq $Script:ParamCount) -and ($Script:DestinationPortRanges.Count -eq $Script:ParamCount) -and ($Script:Protocols.Count -eq $Script:ParamCount))
                 {}
                 else
                 {
@@ -810,6 +801,9 @@ Begin
                     Write-Output $output
                     Exit
                 }
+            }
+            else {
+                
             }
         }
         Catch

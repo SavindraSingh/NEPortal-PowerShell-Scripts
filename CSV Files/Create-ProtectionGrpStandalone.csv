@@ -1,0 +1,2 @@
+DPMServerName,TargetServerName,ProtectionGroupName,ProtectedVolumes,Initialreplication,InitialreplicationDateTime,LongTerm,DailyScheduleTime,WeeklyScheduleTime,WeeklyScheduleDays,WeeksInterval,MonthlyScheduleTime,RelativeIntervals,MonthDays,YearlyScheduleTime,DaysOfMonth,MonthsInYear,RetensionDays,SychronizationFrequencyInMin,Passphrase,DailyRetension,WeeklyRetension,MonthlyRetension,YearlyRetension
+WIN-CBSPVAMA7F2,WIN-UU26HS5M56U,SampleProtectionGroup,C:\,Now,,$true,09:00 AM,,,,,,,,,,5,15,1234567890abcdefgh,5,,,

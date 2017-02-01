@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,VMName,NICCardNames,NSGGroup
+123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testrg123,testvm456,testvm456295,nsg125

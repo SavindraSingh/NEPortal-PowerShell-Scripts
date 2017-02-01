@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,ServerName,DeletedDBName,NewDBName,DeletedDBDeletionDateTime,Edition,ServiceTierName
+13,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,todelete,sampleser2,sampledb1,reincarnation,11-04-2016 08:56,Standard,s1

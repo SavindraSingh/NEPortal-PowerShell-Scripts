@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,NSGGroupName,RuleName,SourceAddressPrefix,SourcePortRange,DestinationAddressPrefix,DestinationPortRange,RuleAction,Protocol,FlowDirection,Priority
+"123","sailakshmi.penta@netenrich.com","Azur3@123","ca68598c-ecc3-4abc-b7a2-1ecef33f278d","todelete","South Central US","samplensg1","samplerule","Internet","80","*","*","Allow","Tcp","Inbound","101"

@@ -1,0 +1,3 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,DeploymentName,TemplateJSONPath,ParameterJSONPath,skuName,VaultName
+123,sailakshmi.penta@netenrich.com,Azur3@123,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,todelete,South Central US,bvtemplate,C:\Users\azure-admin\Desktop\JsonTemplates\BackupVaultTemplate.json,C:\Users\azure-admin\Desktop\JsonTemplates\BackupVaultParameters.json,Standard,samplebvt12
+123,sailakshmi.penta@netenrich.com,Azur3@123,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,todelete,South Central US,bvtemplate,C:\Users\azure-admin\Desktop\JsonTemplates\BackupVaultTemplate.json,C:\Users\azure-admin\Desktop\JsonTemplates\BackupVaultParameters.json,Standard,samplebvt14

@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,SecondaryResourceGrpName,SecondaryServerName,SecondaryDatabaseName,PrimaryResourceGrpName
+12,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,todelete,sampleser3,sampledb1,testrg123

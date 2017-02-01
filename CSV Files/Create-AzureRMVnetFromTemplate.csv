@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,DeploymentName,TemplateJSONPath,ParameterJSONPath,VNetName,vnetAddressPrefix,subnet1Prefix,subnet2Prefix,GatewayPrefix
+123,sailakshmi.penta@netenrich.com,Azur3@123,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,todelete,South Central US,sample1,C:\Users\azure-admin\Desktop\JsonTemplates\VNetTemplate.json,C:\Users\azure-admin\Desktop\JsonTemplates\VNetParameters.json,sampletodeletevnet,172.31.0.0/16,172.31.1.0/24,172.31.2.0/24,172.31.0.0/26

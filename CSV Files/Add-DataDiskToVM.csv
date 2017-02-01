@@ -1,0 +1,2 @@
+ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,Location,ResourceGroupName,VMName,DiskName,DiskSizeInGB
+123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,West Europe,resourcegrp-bhaskar,vmforautotest,todelete,128
