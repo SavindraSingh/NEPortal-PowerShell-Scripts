@@ -61,7 +61,7 @@ workflow Stop-AllAzureVMs
         $VmObject = $VirtualMachineObjects | Where-Object {$_.Name -eq $VirtualMachine}
         $vmstatus = Get-AzureRMVM -Name $VirtualMachine -ResourceGroupName $($VmObject.ResourceGroupName) -Status
         $st = $vmstatus.Statuses | Where-Object {$_.Code -eq "PowerState/deallocated"}
-        if($st)
+        if($st -ne $null)
         {
             # Do nothing
         }
