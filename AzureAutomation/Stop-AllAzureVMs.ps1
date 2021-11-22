@@ -63,7 +63,7 @@ workflow Stop-AllAzureVMs
         $st = $vmstatus.Statuses | Where-Object {$_.Code -eq "PowerState/deallocated"}
         if($st -ne $null)
         {
-            # Do nothing
+            # Do nothing - Updated comments
         }
         else
         {
