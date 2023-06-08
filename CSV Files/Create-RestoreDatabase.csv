@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,VMName,LoginUserName,LoginPassword,DatabaseName,BackupFileBlobUrl
-13,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testrg123,East US 2,testsql,sa,pass@123,samplebak,https://automationtest.blob.core.windows.net/todelete/target.bak

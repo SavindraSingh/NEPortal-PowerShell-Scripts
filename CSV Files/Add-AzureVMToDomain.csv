@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,Location,ResourceGroupName,VMName,DomainName,DomainUserName,DomainUserPassword
-123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,East US 2,testRG123,testvm456,sampledom.com,sampledom.com\testuser,Pass@123456789

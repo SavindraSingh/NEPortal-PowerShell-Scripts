@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,Location,ResourceGroupName,RSVaultName,BackupStorageRedundancy,DaysOfWeek,TimesOfDay,ScheduleRunFrequency,VMBackupPolicyName,EnableWeeklyRetentionSchedule,EnableMonthlyRetentionSchedule,EnableYearlyRetentionSchedule,VMToBackup
-123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,East US 2,testrg123,testv12,LocallyRedundant,Sunday,01:00,weekly,policy1,no,no,no,testvm123

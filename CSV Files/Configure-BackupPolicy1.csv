@@ -1,2 +1,0 @@
-ClientID,DaysofWeek,TimesofDay,Include,RetentionDays,NonWorkHourBandwidth,WorkHourBandwidth
-1234,"Mon,Tue",06:00,C:\hello,5,1234567,524288

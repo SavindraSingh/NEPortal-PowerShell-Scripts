@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,VMName,NICCardNames,StaticIPAddress
-123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testRG123,East US 2,TestVM123,testvm123333,172.30.0.4
