@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,SQLServerName,RuleDetails
-12,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testrg123,sampleser,"rule2:1.2.3.4:2.3.4.6:c,rule:1.4.7.8:4.5.7.9:d"

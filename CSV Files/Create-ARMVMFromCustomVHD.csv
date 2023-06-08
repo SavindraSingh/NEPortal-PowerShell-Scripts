@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,Location,OSDiskUri,OSType,VMName,VMSize,AvailabilitySetName,StorageAccountName,VirtualNetworkName,SubnetName,DNSNameForPublicIP,ResourceGroupName,DeploymentName,TemplateJSONPath,ParameterJSONPath
-123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,East US,https://deletestoreac.blob.core.windows.net/myvhd/mycustomvhd.vhd,Windows,vmcusvhd234,Basic_A0,testcustomset2,deletestoreac,deletevnet,deletesubnet,dnspip2,deleterg,testdeployc2,.\CreateARMFromDisk.json,.\CreateVMFromCustomVHDParam.json

@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,Location,ResourceGroupName,VMName,SQLPort,SQLUserName,SQLPassword,DatabaseName,DomainUser,RoleName
-123,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,East US 2,testRG123,testsql,1433,testuser,password@123,sampledb,sampledom\test,db_datareader

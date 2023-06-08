@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,ServerName,DBName,TargetResourceGroupName,TargetServerName,TargetDBName,Edition,ServiceTierName
-13,himabindu.thati@netenrich.com,pass@234,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,testrg123,sampleser1,sampledb,todelete,sampleser2,targetdb,standard,s0

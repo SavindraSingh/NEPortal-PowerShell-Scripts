@@ -1,2 +1,0 @@
-ClientID,AzureUserName,AzurePassword,AzureSubscriptionID,ResourceGroupName,Location,VMName,SQLServerIPOrName,SQLServerPort,SQLUserName,SQLPassword
-123,pravallika.atla@netenrich.com,Pr@v@ll!k@,ca68598c-ecc3-4abc-b7a2-1ecef33f278d,resourcegrp-bhaskar,West Europe,VMForAutoTest,13.85.81.148,1433,sa,pass@123
